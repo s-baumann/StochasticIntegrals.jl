@@ -19,6 +19,7 @@ Where Z and W are brownian motions.
 
 We first write the integrands as univariate functions:
 ```
+using StochasticIntegrals
 using UnivariateFunctions
 A_integrand = PE_Function(1.0,0.0,0.0,2)
 B_integrand = PE_Function(5.0,0.0,0.0,1)
