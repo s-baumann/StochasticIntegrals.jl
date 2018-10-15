@@ -5,6 +5,7 @@ using Dates
 using UnivariateFunctions: UnivariateFunction, PE_Function, evaluate_integral, years_between, years_from_global_base, evaluate
 using Distributions: Normal, quantile
 using Sobol: SobolSeq, next!
+using Random
 
 include("Brown.jl")
 

@@ -186,10 +186,12 @@ function get_normal_draws(covar::covariance_at_date; uniform_draw::Array{Float64
     scaled_draw = covar.chol_ * normal_draw
     return Dict{String,Float64}(covar.covariance_labels_ .=> scaled_draw)
 end
-function get_normal_draws(covar::covariance_at_date, num::Int)
+function get_normal_draws(covar::covariance_at_date, num::Int; twister::MersenneTwister = MersenneTwister(1234))
     array_of_dicts = Array{Dict{String,Float64}}(undef, num)
+    number_of_itos = length(covar.covariance_labels_)
     for i in 1:num
-        array_of_dicts[i] = get_normal_draws(covar)
+        mersenne_draw = rand(twister,number_of_itos)
+        array_of_dicts[i] = get_normal_draws(covar; uniform_draw = mersenne_draw)
     end
     return array_of_dicts
 end
@@ -198,7 +200,7 @@ function get_sobol_normal_draws(covar::covariance_at_date, sob_seq::SobolSeq)
     sobol_draw = next!(sob_seq)
     return get_normal_draws(covar; uniform_draw = sobol_draw)
 end
-function get_sobol_normal_draws(covar::covariance_at_date, sob_seq::SobolSeq, num::Int)
+function get_sobol_normal_draws(covar::covariance_at_date, num::Int; sob_seq::SobolSeq = SobolSeq(length(covar.ito_set_.ito_integrals_)))
     array_of_dicts = Array{Dict{String,Float64}}(undef, num)
     for i in 1:num
         array_of_dicts[i] = get_sobol_normal_draws(covar,sob_seq)
