@@ -192,7 +192,7 @@ uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[UnivariateFunctions]]
-deps = ["Dates", "Test"]
+deps = ["Dates", "SchumakerSpline", "Test"]
 git-tree-sha1 = "71cfb215c9532f88c146d2944d569a98ec633367"
 uuid = "368b7869-440d-5a68-a3d1-bbc86b0a93b0"
 version = "0.0.1"
