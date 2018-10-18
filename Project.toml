@@ -1,0 +1,12 @@
+authors = ["Stuart Baumann <stuart@stuartbaumann.com>"]
+name = "StochasticIntegrals"
+uuid = "4aeb559c-d310-11e8-a8d5-f2801f1b9fd1"
+version = "0.1.0"
+
+
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Sobol = "ed01d8cd-4d21-5b2a-85b4-cc3bdc58bad4"
+UnivariateFunctions = "368b7869-440d-5a68-a3d1-bbc86b0a93b0"
