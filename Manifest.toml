@@ -119,6 +119,12 @@ git-tree-sha1 = "9a6c758cdf73036c3239b0afbea790def1dabff9"
 uuid = "79098fc4-a85e-5d69-aa6a-4863f24498fa"
 version = "0.5.0"
 
+[[SchumakerSpline]]
+deps = ["Dates", "Test"]
+git-tree-sha1 = "a4a892375bebc4219804ff9f1a7a954079c41796"
+uuid = "65e68595-3a03-5ff5-a6a2-f05fa774f32e"
+version = "1.0.3"
+
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
