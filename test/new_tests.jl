@@ -41,7 +41,7 @@ ito_set_ = ito_set(brownian_corr_matrix, brownian_ids, ito_integrals)
 abs(get_volatility(ito_set_,  "GBP_FX", Date(2020,1,1)) - GBP_FX_Vol) < tol
 abs(get_volatility(ito_set_,  "GBP_FX", Date(2022,1,1)) - GBP_FX_Vol) < tol
 # The next ito integral has changing vol
-abs(get_volatility(ito_set_,  "USD_IR_a", Date(2020,1,1)) - get_volatility(ito_set_,  "USD_IR_a", Date(2022,1,1)) ) > 0.1
+abs(get_volatility(ito_set_,  "USD_IR_a", Date(2020,1,1)) - get_volatility(ito_set_,  "USD_IR_a", Date(2022,1,1)) ) > 0.005
 abs(get_volatility(ito_set_,  "USD_IR_a", Date(2020,1,1)) - evaluate(USD_hw_a_curve, Date(2020,1,1)) ) < tol
 
 
@@ -85,12 +85,12 @@ s = SobolSeq(length(cov_date.ito_set_.ito_integrals_))
 normals = get_normal_draws(cov_date,100000)
 normal_samples = SplitDicts(normals)
 
-sobols = get_sobol_normal_draws(cov_date, s,100000)
+sobols = get_sobol_normal_draws(cov_date, 100000)
 sobol_samples = SplitDicts(sobols)
 zero_draws = get_zero_draws(cov_date,2)
 
 abs(var(normal_samples[1]) - get_variance(cov_date, "USD_IR_a"))  < 0.001
-abs(var(normal_samples[2]) - get_variance(cov_date, "USD_IR_aB")) < 0.0011
+abs(var(normal_samples[2]) - get_variance(cov_date, "USD_IR_aB")) < 0.011
 abs(var(normal_samples[3]) - get_variance(cov_date, "GBP_IR_a"))  < 1e-06
 abs(var(normal_samples[4]) - get_variance(cov_date, "GBP_IR_aB")) < 1e-04
 abs(var(normal_samples[5]) - get_variance(cov_date, "GBP_FX"))    < 0.02
