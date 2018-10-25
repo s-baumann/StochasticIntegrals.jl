@@ -1,7 +1,7 @@
 name = "StochasticIntegrals"
 uuid = "4aeb559c-d310-11e8-a8d5-f2801f1b9fd1"
 authors = ["Stuart Baumann <stuart@stuartbaumann.com>"]
-version = "0.0.1"
+version = "0.1.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
