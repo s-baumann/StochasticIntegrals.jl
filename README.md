@@ -2,10 +2,10 @@
 
 [![Build Status](https://travis-ci.com/s-baumann/StochasticIntegrals.jl.svg?branch=master)](https://travis-ci.org/s-baumann/StochasticIntegrals.jl)
 
-This generates covariance matrices and cholesky decompositions for a set of stochastic integrals.
-At the moment it only supports Ito integrals. Users specify the UnivariateFunction that is the integrand of the ito integral and a covariance matrix will be made of all such Ito integrals.
+This generates covariance matrices and Cholesky decompositions for a set of stochastic integrals.
+At the moment it only supports Ito integrals. Users specify the [UnivariateFunction](https://github.com/s-baumann/UnivariateFunctions.jl) that is the integrand of the ito integral and a covariance matrix will be made of all such Ito integrals.
 
-There are a large number of convenience functions. This includes finding the variance and instantaneous volatility of an ito integral; for extracting the terminal correlation & covariance of a pair of stochastic integrals over a period of time; for generation of random draws from the set of Ito integrals (either pseudorandom or quasirandom). Given a draw of stochastic integrals, it is also possible to find the density of the multivariate normal distribution distribution at this point. See the testing files for code examples.
+There are a large number of convenience functions. This includes finding the variance and instantaneous volatility of an ito integral; for extracting the terminal correlation & covariance of a pair of stochastic integrals over a period of time; for generation of random draws from the set of Ito integrals (either pseudorandom or quasirandom). Given a draw of stochastic integrals, it is also possible to find the density of the multivariate normal distribution at this point. See the testing files for code examples.
 
 ## Example
 
@@ -17,7 +17,7 @@ $$ \int 5t dZ $$
 
 $$ \int e^{5 - t} dW $$
 
-Where Z and W are brownian motions.
+Where Z and W are Brownian Motions.
 
 We first write the integrands as univariate functions:
 ```
@@ -50,7 +50,7 @@ Now we can place the ito integrals together with the brownian motion correlation
 ```
 ItoSet = ito_set(brownian_correlation_matrix, brownian_ids, ito_integrals)
 ```
-In this format we can access the volatility of any of the ito integrals at any point. We would ussually be more
+In this format we can access the volatility of any of the ito integrals at any point. We would usually be more
 interested in the statistical properties of the ito integrals at a point forward in time. This can be done by
 generating a covariance_at_date object. We must first specify the start and end limits on each integral. Below we
 look at the integrals  between 0.0 and 2.0. More generally time can be specified in Dates format. See testing
@@ -60,7 +60,7 @@ covar = covariance_at_date(ito_set_, 0.0, 2.0)
 ```
 All of the hard work is done inside the above constructor. In particular a covariance matrix is generated as
 well as its inverse, cholesky decomposition and determinant. These can be accessed directly in the normal way.
-Alternatively there are methods that can be called oon a covar object to extract a correlation, covariance, variance or volatility using the stochastic integral ids. For instance to get the covariance between integrals A and B:
+Alternatively there are methods that can be called on a covar object to extract a correlation, covariance, variance or volatility using the stochastic integral ids. For instance to get the covariance between integrals A and B:
 ```
 covariance_of_A_and_B = get_covariance(covar, "A", "B")
 ```
