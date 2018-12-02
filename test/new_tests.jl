@@ -28,21 +28,21 @@ brownian_corr_matrix = Symmetric([1.0 0.75 0.5 0.0;
                                   0.0 1.0 0.5 0.25;
                                   0.0 0.0 1.0 0.25;
                                   0.0 0.0 0.0 1.0])
-brownian_ids = ["USD_IR", "GBP_IR", "GBP_FX", "BARC"]
-USD_IR_a_ito  = ito_integral("USD_IR", "USD_IR_a", USD_hw_a_curve)
-USD_IR_aB_ito = ito_integral("USD_IR", "USD_IR_aB", USD_hw_aB_curve)
-GBP_IR_a_ito  = ito_integral("GBP_IR", "GBP_IR_a", GBP_hw_a_curve)
-GBP_IR_aB_ito = ito_integral("GBP_IR", "GBP_IR_aB", GBP_hw_aB_curve)
-GBP_FX_ito    = flat_ito(    "GBP_FX", "GBP_FX"   , GBP_FX_Vol)
+brownian_ids = [:USD_IR, :GBP_IR, :GBP_FX, :BARC]
+USD_IR_a_ito  = ito_integral(:USD_IR, :USD_IR_a, USD_hw_a_curve)
+USD_IR_aB_ito = ito_integral(:USD_IR, :USD_IR_aB, USD_hw_aB_curve)
+GBP_IR_a_ito  = ito_integral(:GBP_IR, :GBP_IR_a, GBP_hw_a_curve)
+GBP_IR_aB_ito = ito_integral(:GBP_IR, :GBP_IR_aB, GBP_hw_aB_curve)
+GBP_FX_ito    = flat_ito(    :GBP_FX, :GBP_FX   , GBP_FX_Vol)
 ito_integrals = [USD_IR_a_ito, USD_IR_aB_ito, GBP_IR_a_ito, GBP_IR_aB_ito, GBP_FX_ito]
 
 ito_set_ = ito_set(brownian_corr_matrix, brownian_ids, ito_integrals)
 # The next ito integral should have constant vol
-abs(get_volatility(ito_set_,  "GBP_FX", Date(2020,1,1)) - GBP_FX_Vol) < tol
-abs(get_volatility(ito_set_,  "GBP_FX", Date(2022,1,1)) - GBP_FX_Vol) < tol
+abs(get_volatility(ito_set_,  :GBP_FX, Date(2020,1,1)) - GBP_FX_Vol) < tol
+abs(get_volatility(ito_set_,  :GBP_FX, Date(2022,1,1)) - GBP_FX_Vol) < tol
 # The next ito integral has changing vol
-abs(get_volatility(ito_set_,  "USD_IR_a", Date(2020,1,1)) - get_volatility(ito_set_,  "USD_IR_a", Date(2022,1,1)) ) > 0.005
-abs(get_volatility(ito_set_,  "USD_IR_a", Date(2020,1,1)) - evaluate(USD_hw_a_curve, Date(2020,1,1)) ) < tol
+abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - get_volatility(ito_set_,  :USD_IR_a, Date(2022,1,1)) ) > 0.005
+abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - evaluate(USD_hw_a_curve, Date(2020,1,1)) ) < tol
 
 
 
@@ -53,13 +53,13 @@ abs(covar.covariance_[1,1] - get_variance(USD_IR_a_ito, years_from_global_base(t
 cov_date = covariance_at_date(ito_set_, today, later_date)
 abs(cov_date.covariance_[5,5] - GBP_FX_Vol * (years_from_global_base(later_date) - years_from_global_base(today))) < tol
 
-abs(get_volatility(ito_set_,  "USD_IR_a", Date(2020,1,1)) - get_volatility(cov_date,  "USD_IR_a", Date(2020,1,1)) ) < tol
-abs(cov_date.covariance_[1,3] - get_covariance(cov_date, "USD_IR_a", "GBP_IR_a")) < tol
-abs(get_variance(cov_date, "USD_IR_a") - get_covariance(cov_date, "USD_IR_a", "USD_IR_a")) < tol
+abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - get_volatility(cov_date,  :USD_IR_a, Date(2020,1,1)) ) < tol
+abs(cov_date.covariance_[1,3] - get_covariance(cov_date, :USD_IR_a, :GBP_IR_a)) < tol
+abs(get_variance(cov_date, :USD_IR_a) - get_covariance(cov_date, :USD_IR_a, :USD_IR_a)) < tol
 
 # Test correlation.
-abs(get_correlation(cov_date, "USD_IR_a", "GBP_IR_a") - (get_covariance(cov_date, "USD_IR_a", "GBP_IR_a")/sqrt(get_variance(cov_date, "USD_IR_a") * get_variance(cov_date, "GBP_IR_a")))) < tol
-abs(get_correlation(cov_date, "GBP_IR_aB", "GBP_IR_a") - (get_covariance(cov_date, "GBP_IR_aB", "GBP_IR_a")/sqrt(get_variance(cov_date, "GBP_IR_aB") * get_variance(cov_date, "GBP_IR_a")))) < tol
+abs(get_correlation(cov_date, :USD_IR_a, :GBP_IR_a) - (get_covariance(cov_date, :USD_IR_a, :GBP_IR_a)/sqrt(get_variance(cov_date, :USD_IR_a) * get_variance(cov_date, :GBP_IR_a)))) < tol
+abs(get_correlation(cov_date, :GBP_IR_aB, :GBP_IR_a) - (get_covariance(cov_date, :GBP_IR_aB:, :GBP_IR_a)/sqrt(get_variance(cov_date, :GBP_IR_aB) * get_variance(cov_date, :GBP_IR_a)))) < tol
 
 Random.seed!(1234)
 ## Test random draws
@@ -78,8 +78,8 @@ end
 all([test_random_points_pdf(cov_date) for i in 1:1000])
 
 # Distribution Testing
-function SplitDicts(dictarray::Array{Dict{String,Float64}})
-    return get.(dictarray, "USD_IR_a", 0), get.(dictarray, "USD_IR_aB", 0), get.(dictarray, "GBP_IR_a", 0), get.(dictarray, "GBP_IR_aB", 0), get.(dictarray, "GBP_FX", 0)
+function SplitDicts(dictarray::Array{Dict{Symbol,Float64}})
+    return get.(dictarray, :USD_IR_a, 0), get.(dictarray, :USD_IR_aB, 0), get.(dictarray, :GBP_IR_a, 0), get.(dictarray, :GBP_IR_aB, 0), get.(dictarray, :GBP_FX, 0)
 end
 s = SobolSeq(length(cov_date.ito_set_.ito_integrals_))
 normals = get_normal_draws(cov_date,100000)
@@ -89,20 +89,20 @@ sobols = get_sobol_normal_draws(cov_date, 100000)
 sobol_samples = SplitDicts(sobols)
 zero_draws = get_zero_draws(cov_date,2)
 
-abs(var(normal_samples[1]) - get_variance(cov_date, "USD_IR_a"))  < 0.001
-abs(var(normal_samples[2]) - get_variance(cov_date, "USD_IR_aB")) < 0.011
-abs(var(normal_samples[3]) - get_variance(cov_date, "GBP_IR_a"))  < 1e-06
-abs(var(normal_samples[4]) - get_variance(cov_date, "GBP_IR_aB")) < 1e-04
-abs(var(normal_samples[5]) - get_variance(cov_date, "GBP_FX"))    < 0.02
+abs(var(normal_samples[1]) - get_variance(cov_date, :USD_IR_a))  < 0.001
+abs(var(normal_samples[2]) - get_variance(cov_date, :USD_IR_aB)) < 0.011
+abs(var(normal_samples[3]) - get_variance(cov_date, :GBP_IR_a))  < 1e-06
+abs(var(normal_samples[4]) - get_variance(cov_date, :GBP_IR_aB)) < 1e-04
+abs(var(normal_samples[5]) - get_variance(cov_date, :GBP_FX))    < 0.02
 
-abs(var(sobol_samples[1])  - get_variance(cov_date, "USD_IR_a"))  < 1e-04
-abs(var(sobol_samples[2])  - get_variance(cov_date, "USD_IR_aB")) < 0.001
-abs(var(sobol_samples[3])  - get_variance(cov_date, "GBP_IR_a"))  < 1e-07
-abs(var(sobol_samples[4])  - get_variance(cov_date, "GBP_IR_aB")) < 1e-05
-abs(var(sobol_samples[5])  - get_variance(cov_date, "GBP_FX"))    < 0.02
+abs(var(sobol_samples[1])  - get_variance(cov_date, :USD_IR_a))  < 1e-04
+abs(var(sobol_samples[2])  - get_variance(cov_date, :USD_IR_aB)) < 0.001
+abs(var(sobol_samples[3])  - get_variance(cov_date, :GBP_IR_a))  < 1e-07
+abs(var(sobol_samples[4])  - get_variance(cov_date, :GBP_IR_aB)) < 1e-05
+abs(var(sobol_samples[5])  - get_variance(cov_date, :GBP_FX))    < 0.02
 
 cov(sobol_samples[5], sobol_samples[1])
-get_covariance(cov_date, "GBP_FX", "USD_IR_a")
+get_covariance(cov_date, :GBP_FX, :USD_IR_a)
 
 
 #  Test likelihood

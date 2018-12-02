@@ -1,8 +1,8 @@
 const tol = 10*eps()
 
 struct ito_integral
-    brownian_id_::String
-    ito_integral_id_::String
+    brownian_id_::Symbol
+    ito_integral_id_::Symbol
     f_::UnivariateFunction
 end
 
@@ -48,7 +48,7 @@ function get_correlation(ito1::ito_integral,ito2::ito_integral,  base::Date, fro
     return get_correlation(ito1, ito2, from_fl, to_fl, gaussian_correlation)
 end
 
-function brownians_in_use(itos::Array{ito_integral}, brownians::Array{String})
+function brownians_in_use(itos::Array{ito_integral}, brownians::Array{Symbol})
     brownians_in_use = unique(map(x -> x.brownian_id_ , itos))
     indices_in_use   = unique(findall(map(x -> x in brownians_in_use , brownians)))
     reduced_brownian_list = brownians[indices_in_use]
@@ -57,9 +57,9 @@ end
 
 struct ito_set
     brownian_correlation_matrix_::Symmetric
-    brownian_ids_::Array{String}
+    brownian_ids_::Array{Symbol}
     ito_integrals_::Array{ito_integral}
-    function ito_set(brownian_corr_matrix::Symmetric, brownian_ids::Array{String}, ito_integrals::Array{ito_integral})
+    function ito_set(brownian_corr_matrix::Symmetric, brownian_ids::Array{Symbol}, ito_integrals::Array{ito_integral})
         if (size(brownian_ids)[1] != size(brownian_corr_matrix)[1])
             error("The shape of brownian_ids_ must match the number of rows/columns of brownian_correlation_matrix_")
         end
@@ -77,7 +77,7 @@ function get_correlation(ito::ito_set, index1::Int, index2::Int)
     return ito.brownian_correlation_matrix_[index1, index2]
 end
 
-function get_correlation(ito::ito_set, brownian_id1::String, brownian_id2::String)
+function get_correlation(ito::ito_set, brownian_id1::Symbol, brownian_id2::Symbol)
     index1 = findall(brownian_id1 .== ito.brownian_ids_)[1]
     index2 = findall(brownian_id2 .== ito.brownian_ids_)[1]
     return get_correlation(ito, index1, index2)
@@ -87,7 +87,7 @@ function get_volatility(ito::ito_set, index::Int, on::Date)
     return get_volatility(ito.ito_integrals_[index], on)
 end
 
-function get_volatility(ito::ito_set, ito_integral_id::String, on::Date)
+function get_volatility(ito::ito_set, ito_integral_id::Symbol, on::Date)
     index = findall(ito_integral_id .== map(p->p.ito_integral_id_, ito.ito_integrals_))[1]
     return get_volatility(ito, index, on)
 end
@@ -113,7 +113,7 @@ struct covariance_at_date
     ito_set_::ito_set
     from_::Float64
     to_::Float64
-    covariance_labels_::Array{String}
+    covariance_labels_::Array{Symbol}
     covariance_::Symmetric
     chol_::LowerTriangular
     inverse_::Symmetric
@@ -143,11 +143,11 @@ function get_volatility(covar::covariance_at_date, index::Int, on::Date)
     return get_volatility(covar.ito_set_, index, on)
 end
 
-function get_volatility(covar::covariance_at_date, id::String, on::Date)
+function get_volatility(covar::covariance_at_date, id::Symbol, on::Date)
     return get_volatility(covar.ito_set_, id, on)
 end
 
-function get_variance(covar::covariance_at_date, id::String)
+function get_variance(covar::covariance_at_date, id::Symbol)
         index = findall(id .== covar.covariance_labels_)[1]
         return get_variance(covar, index)
 end
@@ -160,7 +160,7 @@ function get_covariance(covar::covariance_at_date, index_1::Int, index_2::Int)
     return covar.covariance_[index_1,index_2]
 end
 
-function get_covariance(covar::covariance_at_date, id1::String, id2::String)
+function get_covariance(covar::covariance_at_date, id1::Symbol, id2::Symbol)
     index_1 = findall(id1 .== covar.covariance_labels_)[1]
     index_2 = findall(id2 .== covar.covariance_labels_)[1]
     return get_covariance(covar, index_1, index_2)
@@ -173,7 +173,7 @@ function get_correlation(covar::covariance_at_date, index_1::Int, index_2::Int)
     return covariance/sqrt(var1 * var2)
 end
 
-function get_correlation(covar::covariance_at_date, id1::String, id2::String)
+function get_correlation(covar::covariance_at_date, id1::Symbol, id2::Symbol)
     index_1 = findall(id1 .== covar.covariance_labels_)[1]
     index_2 = findall(id2 .== covar.covariance_labels_)[1]
     return get_correlation(covar, index_1, index_2)
@@ -184,10 +184,10 @@ function get_normal_draws(covar::covariance_at_date; uniform_draw::Array{Float64
     number_of_itos = length(covar.covariance_labels_)
     normal_draw = quantile.(Ref(Normal()), uniform_draw)
     scaled_draw = covar.chol_ * normal_draw
-    return Dict{String,Float64}(covar.covariance_labels_ .=> scaled_draw)
+    return Dict{Symbol,Float64}(covar.covariance_labels_ .=> scaled_draw)
 end
 function get_normal_draws(covar::covariance_at_date, num::Int; twister::MersenneTwister = MersenneTwister(1234))
-    array_of_dicts = Array{Dict{String,Float64}}(undef, num)
+    array_of_dicts = Array{Dict{Symbol,Float64}}(undef, num)
     number_of_itos = length(covar.covariance_labels_)
     for i in 1:num
         mersenne_draw = rand(twister,number_of_itos)
@@ -201,7 +201,7 @@ function get_sobol_normal_draws(covar::covariance_at_date, sob_seq::SobolSeq)
     return get_normal_draws(covar; uniform_draw = sobol_draw)
 end
 function get_sobol_normal_draws(covar::covariance_at_date, num::Int; sob_seq::SobolSeq = SobolSeq(length(covar.ito_set_.ito_integrals_)))
-    array_of_dicts = Array{Dict{String,Float64}}(undef, num)
+    array_of_dicts = Array{Dict{Symbol,Float64}}(undef, num)
     for i in 1:num
         array_of_dicts[i] = get_sobol_normal_draws(covar,sob_seq)
     end
@@ -212,11 +212,11 @@ end
 
 # This is most likely useful for bug hunting.
 function get_zero_draws(covar::covariance_at_date)
-    return Dict{String,Float64}(covar.covariance_labels_ .=> 0.0)
+    return Dict{Symbol,Float64}(covar.covariance_labels_ .=> 0.0)
 end
 # This is most likely useful for bug hunting.
 function get_zero_draws(covar::covariance_at_date, num::Int)
-    array_of_dicts = Array{Dict{String,Float64}}(undef, num)
+    array_of_dicts = Array{Dict{Symbol,Float64}}(undef, num)
     for i in 1:num
         array_of_dicts[i] = get_zero_draws(covar)
     end
@@ -225,7 +225,7 @@ end
 
 
 
-function pdf(covar::covariance_at_date, coordinates::Dict{String,Float64})
+function pdf(covar::covariance_at_date, coordinates::Dict{Symbol,Float64})
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma(x - \mu))
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)
@@ -234,7 +234,7 @@ function pdf(covar::covariance_at_date, coordinates::Dict{String,Float64})
     return one_on_sqrt_of_det_two_pi_covar * exp(-0.5 * x' * covar.covariance_ * x)
 end
 
-function log_likelihood(covar::covariance_at_date, coordinates::Dict{String,Float64})
+function log_likelihood(covar::covariance_at_date, coordinates::Dict{Symbol,Float64})
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma(x - \mu))
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)
