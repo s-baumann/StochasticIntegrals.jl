@@ -3,7 +3,7 @@ const tol = 10*eps()
 struct ito_integral
     brownian_id_::Symbol
     ito_integral_id_::Symbol
-    f_::UnivariateFunction
+    f_::MultivariateFunction
 end
 
 function flat_ito(brownian_id_, ito_integral_id_, variance_)
@@ -11,7 +11,7 @@ function flat_ito(brownian_id_, ito_integral_id_, variance_)
 end
 
 function get_variance(ito::ito_integral, from::Float64, to::Float64)
-    return evaluate_integral(ito.f_^2,from,to)
+    return integral(ito.f_^2,from,to)
 end
 
 function get_variance(ito::ito_integral, base::Date, from::Date, to::Date)
@@ -25,7 +25,7 @@ function get_volatility(ito::ito_integral, on::Date)
 end
 
 function get_covariance(ito1::ito_integral,ito2::ito_integral, from::Float64, to::Float64, gaussian_correlation::Float64)
-    return gaussian_correlation * evaluate_integral(ito1.f_ * ito2.f_, from, to)
+    return gaussian_correlation * integral(ito1.f_ * ito2.f_, from, to)
 end
 
 
@@ -222,8 +222,6 @@ function get_zero_draws(covar::covariance_at_date, num::Int)
     end
     return array_of_dicts
 end
-
-
 
 function pdf(covar::covariance_at_date, coordinates::Dict{Symbol,Float64})
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma(x - \mu))
