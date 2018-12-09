@@ -279,12 +279,6 @@ uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
-[[UnivariateFunctions]]
-deps = ["Dates", "SchumakerSpline", "Test"]
-git-tree-sha1 = "366e58a4f103979e3f69c2cc5e79adc589b916eb"
-uuid = "368b7869-440d-5a68-a3d1-bbc86b0a93b0"
-version = "0.0.2"
-
 [[WeakRefStrings]]
 deps = ["Missings", "Random", "Test"]
 git-tree-sha1 = "1087e8be380f2c8b96434b02bb1150fc1c511135"
