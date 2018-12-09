@@ -28,7 +28,6 @@ function get_covariance(ito1::ito_integral,ito2::ito_integral, from::Float64, to
     return gaussian_correlation * integral(ito1.f_ * ito2.f_, from, to)
 end
 
-
 function get_covariance(ito1::ito_integral,ito2::ito_integral, base::Date, from::Date, to::Date, gaussian_correlation::Float64)
     from_fl = years_between(from, base)
     to_fl   = years_between(to, base)
