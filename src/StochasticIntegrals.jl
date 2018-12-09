@@ -2,7 +2,7 @@ module StochasticIntegrals
 
 using LinearAlgebra: Symmetric, cholesky, inv, det, LowerTriangular
 using Dates
-using MultivariateFunctions#: UnivariateFunction, PE_Function, evaluate_integral, years_between, years_from_global_base, evaluate
+using MultivariateFunctions
 using Distributions: Normal, quantile
 using Sobol: SobolSeq, next!
 using Random
