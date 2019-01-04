@@ -1,6 +1,8 @@
 # StochasticIntegrals.jl
 
-[![Build Status](https://travis-ci.com/s-baumann/StochasticIntegrals.jl.svg?branch=master)](https://travis-ci.org/s-baumann/StochasticIntegrals.jl)
+| Build | Coverage |
+|-------|----------|
+| [![Build Status](https://travis-ci.com/s-baumann/StochasticIntegrals.jl.svg?branch=master)](https://travis-ci.org/s-baumann/StochasticIntegrals.jl) | [![Coverage Status](https://coveralls.io/repos/github/s-baumann/StochasticIntegrals.jl/badge.svg?branch=master)](https://coveralls.io/github/s-baumann/StochasticIntegrals.jl?branch=master)
 
 This generates covariance matrices and Cholesky decompositions for a set of stochastic integrals.
 At the moment it only supports Ito integrals. Users specify the [UnivariateFunction](https://github.com/s-baumann/UnivariateFunctions.jl) that is the integrand of the ito integral and a covariance matrix will be made of all such Ito integrals.
