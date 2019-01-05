@@ -24,7 +24,7 @@ Where Z and W are Brownian Motions.
 We first write the integrands as univariate functions:
 ```
 using StochasticIntegrals
-using UnivariateFunctions
+using MultivariateFunctions
 A_integrand = PE_Function(1.0,0.0,0.0,2)
 B_integrand = PE_Function(5.0,0.0,0.0,1)
 C_integrand = PE_Function(1.0,-1.0,5.0,0)
@@ -36,16 +36,16 @@ matrix is for the "Z" process and the second is for the "W" process.
 ```
 using LinearAlgebra
 brownian_correlation_matrix = Symmetric(diagm(0 => ones(2)))
-brownian_ids = ["Z", "W"]
+brownian_ids = [:Z, :W]
 ```
 Now we package the integrands of our stochastic integrals together with their corresponding
 Brownian motion ids to represent an Ito integral. We must also specify a new id for the stochastic
 integral to ensure that we know what row/column of the covariance matrix we create represents which
 integral.
 ```
-A  = ito_integral("Z", "A", A_integrand)
-B  = ito_integral("Z", "B", B_integrand)
-C  = ito_integral("W", "C", C_integrand)
+A  = ito_integral(:Z, :A, A_integrand)
+B  = ito_integral(:Z, :B, B_integrand)
+C  = ito_integral(:W, :C, C_integrand)
 ito_integrals = [A, B, C]
 ```
 Now we can place the ito integrals together with the brownian motion correlation matrix to make an "ito_set"
@@ -58,13 +58,13 @@ generating a covariance_at_date object. We must first specify the start and end 
 look at the integrals  between 0.0 and 2.0. More generally time can be specified in Dates format. See testing
 files for examples.
 ```
-covar = covariance_at_date(ito_set_, 0.0, 2.0)
+covar = covariance_at_date(ItoSet, 0.0, 2.0)
 ```
 All of the hard work is done inside the above constructor. In particular a covariance matrix is generated as
 well as its inverse, cholesky decomposition and determinant. These can be accessed directly in the normal way.
 Alternatively there are methods that can be called on a covar object to extract a correlation, covariance, variance or volatility using the stochastic integral ids. For instance to get the covariance between integrals A and B:
 ```
-covariance_of_A_and_B = get_covariance(covar, "A", "B")
+covariance_of_A_and_B = get_covariance(covar, :A, :B)
 ```
 It is also possible to generate random numbers using either the get_normal_draws or get_sobol_normal_draws functions. For instance to get 10 pseudorandom realisations of these integrals:
 ```
