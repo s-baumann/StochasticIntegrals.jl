@@ -1,11 +1,11 @@
 module StochasticIntegrals
 
 using LinearAlgebra: Symmetric, cholesky, inv, det, LowerTriangular
-using Dates
+using Dates: Date, days
 using MultivariateFunctions
 using Distributions: Normal, quantile
 using Sobol: SobolSeq, next!
-using Random
+using Random: rand
 
 include("Brown.jl")
 
