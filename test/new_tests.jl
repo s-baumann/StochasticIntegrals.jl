@@ -1,4 +1,4 @@
-using MultivariateFunctions
+using UnivariateFunctions
 using StochasticIntegrals
 using Dates
 using LinearAlgebra
@@ -29,14 +29,14 @@ brownian_corr_matrix = Symmetric([1.0 0.75 0.5 0.0;
                                   0.0 0.0 1.0 0.25;
                                   0.0 0.0 0.0 1.0])
 brownian_ids = [:USD_IR, :GBP_IR, :GBP_FX, :BARC]
-USD_IR_a_ito  = ito_integral(:USD_IR, :USD_IR_a, USD_hw_a_curve)
-USD_IR_aB_ito = ito_integral(:USD_IR, :USD_IR_aB, USD_hw_aB_curve)
-GBP_IR_a_ito  = ito_integral(:GBP_IR, :GBP_IR_a, GBP_hw_a_curve)
-GBP_IR_aB_ito = ito_integral(:GBP_IR, :GBP_IR_aB, GBP_hw_aB_curve)
-GBP_FX_ito    = flat_ito(    :GBP_FX, :GBP_FX   , GBP_FX_Vol)
-ito_integrals = [USD_IR_a_ito, USD_IR_aB_ito, GBP_IR_a_ito, GBP_IR_aB_ito, GBP_FX_ito]
+USD_IR_a_ito  = ItoIntegral(:USD_IR, USD_hw_a_curve)
+USD_IR_aB_ito = ItoIntegral(:USD_IR, USD_hw_aB_curve)
+GBP_IR_a_ito  = ItoIntegral(:GBP_IR, GBP_hw_a_curve)
+GBP_IR_aB_ito = ItoIntegral(:GBP_IR, GBP_hw_aB_curve)
+GBP_FX_ito    = ItoIntegral(:GBP_FX, GBP_FX_Vol)
+ito_integrals = Dict([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB, :GBP_FX] .=> [USD_IR_a_ito, USD_IR_aB_ito, GBP_IR_a_ito, GBP_IR_aB_ito, GBP_FX_ito])
 
-ito_set_ = ito_set(brownian_corr_matrix, brownian_ids, ito_integrals)
+ito_set_ = ItoSet(brownian_corr_matrix, brownian_ids, ito_integrals)
 # The next ito integral should have constant vol
 abs(get_volatility(ito_set_,  :GBP_FX, Date(2020,1,1)) - GBP_FX_Vol) < tol
 abs(get_volatility(ito_set_,  :GBP_FX, Date(2022,1,1)) - GBP_FX_Vol) < tol
@@ -46,11 +46,11 @@ abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - evaluate(USD_hw_a_cur
 
 
 
-covar = covariance_at_date(ito_set_, years_from_global_base(today), years_from_global_base(date_2020))
+covar = CovarianceAtDate(ito_set_, years_from_global_base(today), years_from_global_base(date_2020))
 abs(covar.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(date_2020) - years_from_global_base(today))) < tol
 abs(covar.covariance_[1,1] - get_variance(USD_IR_a_ito, years_from_global_base(today), years_from_global_base(date_2020))) < tol
 
-cov_date = covariance_at_date(ito_set_, today, later_date)
+cov_date = CovarianceAtDate(ito_set_, today, later_date)
 abs(cov_date.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(later_date) - years_from_global_base(today))) < tol
 
 abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - get_volatility(cov_date,  :USD_IR_a, Date(2020,1,1)) ) < tol
@@ -70,7 +70,7 @@ end
 abs_value_of_dict_differences(get_normal_draws(cov_date), get_normal_draws(cov_date)) > tol
 abs_value_of_dict_differences(get_normal_draws(cov_date;  uniform_draw = rand(5)), get_normal_draws(cov_date; uniform_draw =  rand(5))) > tol
 
-function test_random_points_pdf(covar::covariance_at_date)
+function test_random_points_pdf(covar::CovarianceAtDate)
     draws = get_normal_draws(covar)
     pdf_val = pdf(covar, draws)
     return (pdf_val >= 0.0)
@@ -105,7 +105,7 @@ abs(cov(sobol_samples[5], sobol_samples[1]) - get_covariance(cov_date, :GBP_FX, 
 
 
 #  Test likelihood
-function test_random_points_loglikelihood(covar::covariance_at_date)
+function test_random_points_loglikelihood(covar::CovarianceAtDate)
     draws = get_normal_draws(covar)
     log_likelihood_val = log_likelihood(covar, draws)
     return log_likelihood_val > -Inf
