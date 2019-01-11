@@ -28,12 +28,6 @@ struct ItoIntegral
 end
 
 """
-    flat_ito(brownian_id_::Symbol, variance_::Float64)
-    A convenience function for creates an ItoIntegral with a flat integrand function.
-"""
-
-
-"""
     get_variance(ito::ItoIntegral, from::Float64, to::Float64)
     get_variance(ito::ItoIntegral, base::Date, from::Date, to::Date)
 Get the variance of an ItoIntegral from one point of time to another.
