@@ -9,11 +9,11 @@ There are a large number of convenience functions. This includes finding the var
 
 Consider that we have three different stochastic integrals. These are:
 
-$$ \int t^2 dZ $$
+$ \int t^2 dZ $
 
-$$ \int 5t dZ $$
+$ \int 5t dZ $
 
-$$ \int e^{5 - t} dW $$
+$ \int e^{5 - t} dW $
 
 Where Z and W are Brownian Motions.
 
