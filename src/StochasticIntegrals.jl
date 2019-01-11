@@ -2,7 +2,7 @@ module StochasticIntegrals
 
 using LinearAlgebra: Symmetric, cholesky, inv, det, LowerTriangular
 using Dates
-using UnivariateFunctions
+using MultivariateFunctions
 using Distributions: Normal, quantile
 using Sobol: SobolSeq, next!
 using Random

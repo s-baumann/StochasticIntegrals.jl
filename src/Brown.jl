@@ -2,18 +2,26 @@ const tol = 10*eps()
 
 """
 ItoIntegral
-A struct detailing an ito integral. It contains a UnivariateFunction detailing the integrand as well as a symbol detailing an id of the integral's processes.
+A struct detailing an ito integral. It contains a MultivariateFunction detailing the integrand as well as a symbol detailing an id of the integral's processes.
 
 Usual (and most general) contructor is:
-    ItoIntegral(brownian_id_::Symbol, f_::UnivariateFunction)
+    ItoIntegral(brownian_id_::Symbol, f_::MultivariateFunction)
 Convenience constructor for ItoIntegrals where the integrand is a flat function is:
     ItoIntegral(brownian_id_::Symbol, variance_::Float64)
 """
 struct ItoIntegral
     brownian_id_::Symbol
-    f_::UnivariateFunction
+    f_::MultivariateFunction
     function ItoIntegral(brownian_id_::Symbol, variance_::Float64)
         return ItoIntegral(brownian_id_, PE_Function(variance_, 0.0, 0.0, 0))
+    end
+    function ItoIntegral(brownian_id_::Symbol, f_::MultivariateFunction)
+        underlying = underlying_dimensions(f)
+        if size(underlying)
+            error("At present it is only possible to create an ItoIntegral with a one dimensional MultivariateFunction with that one dimension being the time dimension.")
+        end
+        f2 = rebadge(f_, Dict{Symbol,Symbol}(pop!(underlying) => :default))
+        return ItoIntegral(brownian_id_, f2)
     end
 end
 
