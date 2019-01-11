@@ -1,4 +1,4 @@
-using UnivariateFunctions
+using MultivariateFunctions
 using StochasticIntegrals
 using Dates
 using LinearAlgebra

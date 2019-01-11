@@ -13,15 +13,17 @@ struct ItoIntegral
     brownian_id_::Symbol
     f_::MultivariateFunction
     function ItoIntegral(brownian_id_::Symbol, variance_::Float64)
-        return ItoIntegral(brownian_id_, PE_Function(variance_, 0.0, 0.0, 0))
+        return new(brownian_id_, PE_Function(variance_, 0.0, 0.0, 0))
     end
-    function ItoIntegral(brownian_id_::Symbol, f_::MultivariateFunction)
+    function ItoIntegral(brownian_id_::Symbol, f::MultivariateFunction)
         underlying = underlying_dimensions(f)
-        if size(underlying)
+        if length(underlying) == 0
+            return new(brownian_id_, f)
+        elseif length(underlying) > 1
             error("At present it is only possible to create an ItoIntegral with a one dimensional MultivariateFunction with that one dimension being the time dimension.")
         end
-        f2 = rebadge(f_, Dict{Symbol,Symbol}(pop!(underlying) => :default))
-        return ItoIntegral(brownian_id_, f2)
+        f2 = rebadge(f, Dict{Symbol,Symbol}(pop!(underlying) => :default))
+        return new(brownian_id_, f2)
     end
 end
 
@@ -88,8 +90,8 @@ end
     brownians_in_use(itos::Array{ItoIntegral,1}, brownians::Array{Symbol,1})
 Determine which Browninan processes are used in an array of ItoIntegrals.
 """
-function brownians_in_use(itos::Array{ItoIntegral,1}, brownians::Array{Symbol,1})
-    brownians_in_use = unique(map(x -> x.brownian_id_ , itos))
+function brownians_in_use(itos::Dict{Symbol,ItoIntegral}, brownians::Array{Symbol,1})
+    brownians_in_use = unique(map(x -> x.brownian_id_ , values(itos)))
     indices_in_use   = unique(findall(map(x -> x in brownians_in_use , brownians)))
     reduced_brownian_list = brownians[indices_in_use]
     return indices_in_use, reduced_brownian_list
@@ -150,20 +152,21 @@ end
 Make a covariance matrix given an ItoSet and a period of time.
 """
 function make_covariance_matrix(ito_set_::ItoSet, from::Float64, to::Float64)
-    number_of_itos = size(ito_set_.ito_integrals_)[1]
-    cov = Array{Float64}(undef, number_of_itos,number_of_itos)
+    number_of_itos = length(ito_set_.ito_integrals_)
+    ito_ids = collect(keys(ito_set_.ito_integrals_))
+    cov = Array{Float64,2}(undef, number_of_itos,number_of_itos)
     for r in 1:number_of_itos
-        rito = ito_set_.ito_integrals_[r]
-        for c in 1:number_of_itos
-            if c < r
-                cov[r,c] = 0.0 # Since at the end we use the Symmetric thing, this is discarded so we don't bother computing it.
-            end
-            cito = ito_set_.ito_integrals_[c]
+        rito = ito_set_.ito_integrals_[ito_ids[r]]
+        for c in r:number_of_itos
+            #if c < r
+            #    cov[r,c] = 0.0 # Since at the end we use the Symmetric thing, this is discarded so we don't bother computing it.
+            #end
+            cito = ito_set_.ito_integrals_[ito_ids[c]]
             cr_correlation = get_correlation(ito_set_, rito.brownian_id_, cito.brownian_id_)
             cov[r,c] = get_covariance(rito, cito, from, to, cr_correlation)
         end
     end
-    return Symmetric(cov)
+    return Symmetric(cov), ito_ids
 end
 
 """
@@ -178,14 +181,13 @@ struct CovarianceAtDate
     ito_set_::ItoSet
     from_::Float64
     to_::Float64
-    covariance_labels_::Array{Symbol}
+    covariance_labels_::Array{Symbol,1}
     covariance_::Symmetric
     chol_::LowerTriangular
     inverse_::Symmetric
     determinant_::Float64
     function CovarianceAtDate(ito_set_::ItoSet, from_::Float64, to_::Float64)
-        covariance_labels_ = keys(ito_set_.ito_integrals_)
-        covariance_        = make_covariance_matrix(ito_set_, from_, to_)
+        covariance_, covariance_labels_ = make_covariance_matrix(ito_set_, from_, to_)
         chol_              = LowerTriangular(cholesky(covariance_).L)
         inverse_           = Symmetric(inv(covariance_))
         determinant_       = det(covariance_)
@@ -292,7 +294,7 @@ function get_sobol_normal_draws(covar::CovarianceAtDate, sob_seq::SobolSeq)
     sobol_draw = next!(sob_seq)
     return get_normal_draws(covar; uniform_draw = sobol_draw)
 end
-function get_sobol_normal_draws(covar::CovarianceAtDate, num::Int; sob_seq::SobolSeq = SobolSeq(length(covar.ItoSet_.ItoIntegrals_)))
+function get_sobol_normal_draws(covar::CovarianceAtDate, num::Int; sob_seq::SobolSeq = SobolSeq(length(covar.ito_set_.ito_integrals_)))
     array_of_dicts = Array{Dict{Symbol,Float64}}(undef, num)
     for i in 1:num
         array_of_dicts[i] = get_sobol_normal_draws(covar,sob_seq)

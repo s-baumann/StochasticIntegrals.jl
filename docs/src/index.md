@@ -50,7 +50,7 @@ ito_set = ItoSet(brownian_correlation_matrix, brownian_ids, ito_integrals)
 ```
 In this format we can access the volatility of any of the ito integrals at any point. We would usually be more
 interested in the statistical properties of the ito integrals at a point forward in time. This can be done by
-generating a covariance_at_date object. We must first specify the start and end limits on each integral. Below we
+generating a CovarianceAtDate object. We must first specify the start and end limits on each integral. Below we
 look at the integrals  between 0.0 and 2.0. More generally time can be specified in Dates format. See testing
 files for more examples.
 ```
