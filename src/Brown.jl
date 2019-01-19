@@ -103,7 +103,7 @@ struct ItoSet
     brownian_correlation_matrix_::Symmetric
     brownian_ids_::Array{Symbol,1}
     ito_integrals_::Dict{Symbol,ItoIntegral}
-    function ItoSet(brownian_corr_matrix::Symmetric, brownian_ids::Array{Symbol}, ito_integrals::Dict{Symbol,ItoIntegral})
+    function ItoSet(brownian_corr_matrix::Symmetric, brownian_ids::Array{Symbol,1}, ito_integrals::Dict{Symbol,ItoIntegral})
         if (size(brownian_ids)[1] != size(brownian_corr_matrix)[1])
             error("The shape of brownian_ids_ must match the number of rows/columns of brownian_correlation_matrix_")
         end
@@ -165,18 +165,23 @@ end
 
 """
     CovarianceAtDate
-Creates an ItoSet. This contains :
-* A correlation matrix of brownian motions.
-* A vector giving the axis labels for this correlation matrix.
-* A dict of ItoInterals. Here the keys should be ids for the ito integrals and the values should be ItoIntegrals.
-Determine which Brownian processes are used in an array of ItoIntegrals.
+Creates an CovarianceAtDate object. This contains :
+* An Itoset
+* Time From
+* Time To
+And in the constructor the following items are generated and stored in the object:
+* A covariance matrix
+* Labels for the covariance matrix.
+* The cholesky decomposition of the covariance matrix.
+* The inverse of the covariance matrix.
+* The determinant of the covariance matrix.
 """
 struct CovarianceAtDate
     ito_set_::ItoSet
     from_::Float64
     to_::Float64
-    covariance_labels_::Array{Symbol,1}
     covariance_::Symmetric
+    covariance_labels_::Array{Symbol,1}
     chol_::LowerTriangular
     inverse_::Symmetric
     determinant_::Float64
@@ -185,7 +190,7 @@ struct CovarianceAtDate
         chol_              = LowerTriangular(cholesky(covariance_).L)
         inverse_           = Symmetric(inv(covariance_))
         determinant_       = det(covariance_)
-        return new(ito_set_, from_, to_, covariance_labels_, covariance_, chol_, inverse_, determinant_)
+        return new(ito_set_, from_, to_, covariance_, covariance_labels_, chol_, inverse_, determinant_)
     end
     function CovarianceAtDate(ito_set_::ItoSet, from::Date, to::Date)
         from_ = years_from_global_base(from)
