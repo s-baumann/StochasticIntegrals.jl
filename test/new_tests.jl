@@ -115,42 +115,42 @@ all([test_random_points_loglikelihood(cov_date) for i in 1:1000])
 
 # Testing data conversions - From draws
 draws = get_normal_draws(cov_date, 7)
-arr, labs = draws_to_array(draws; labels = [:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
+arr, labs = to_array(draws; labels = [:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 size(arr) == (7,4)
 labs ==  [:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB]
-arr2, labs2 = draws_to_array(draws)
+arr2, labs2 = to_array(draws)
 size(arr2) == (7,5)
 Set(labs2) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB, :GBP_FX])
-dd = draws_to_dataframe(draws; labels = [:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
+dd = to_dataframe(draws; labels = [:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 size(dd) == (7,4)
-dd2 = draws_to_dataframe(draws)
+dd2 = to_dataframe(draws)
 size(dd2) == (7,5)
 Set(names(dd2)) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB, :GBP_FX])
 
 # Testing data conversions - From array
-draws = array_to_draws(arr; labels = labs)
+draws = to_draws(arr; labels = labs)
 length(draws) == 7
 Set(collect(keys(draws[1]))) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
-draws = array_to_draws(arr)
+draws = to_draws(arr)
 length(draws) == 7
 Set(collect(keys(draws[1]))) == Set([:x1, :x2, :x3, :x4])
-dd = array_to_dataframe(arr; labels = labs)
+dd = to_dataframe(arr; labels = labs)
 size(dd)[1] == 7
 Set(collect(names(dd))) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
-dd2 = array_to_dataframe(arr)
+dd2 = to_dataframe(arr)
 size(dd2)[1] == 7
 Set(collect(keys(dd2))) == Set([:x1, :x2, :x3, :x4])
 
 # Testing data conversions - From dataframe
-draws = dataframe_to_draws(dd; labels = labs)
+draws = to_draws(dd; labels = labs)
 length(draws) == 7
 Set(collect(keys(draws[1]))) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
-draws = dataframe_to_draws(dd)
+draws = to_draws(dd)
 length(draws) == 7
 Set(collect(keys(draws[1]))) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
-X, labs = dataframe_to_array(dd; labels = labs)
+X, labs = to_array(dd; labels = labs)
 size(X) == (7, 4)
 Set(labs) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
-X, labs = dataframe_to_array(dd)
+X, labs = to_array(dd)
 size(X) == (7, 4)
 Set(labs) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])

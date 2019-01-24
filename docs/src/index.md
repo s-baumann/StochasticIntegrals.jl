@@ -73,3 +73,7 @@ to find the log likelihood of the first draw we obtained above:
 log_likelihood(covar, draws[1])
 ```
 See the testing files for more code examples.
+
+## Data conversions
+
+StochasticIntegrals generates draws from stochastic integrals and places them into an array of dicts. Sometimes it is easier to use data in an array or in a dataframe. The to\_draws, to\_dataframe and to\_array functions are convenience functions that convert datastructures between draws (Array{Dict{Symbol,Float64},1}), dataframes and arrays.
