@@ -10,7 +10,7 @@
 # The purpose of this script is to appease attobot, until
 # https://github.com/attobot/attobot/issues/50 is fixed.
 ######################################################################
-
+cd("C:\\Dropbox\\Stuart\\Julia_Library\\StochasticIntegrals.jl")
 @assert VERSION ≥ v"0.7"
 
 import Pkg
