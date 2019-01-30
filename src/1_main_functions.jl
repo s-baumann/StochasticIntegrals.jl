@@ -85,10 +85,10 @@ end
 Determine which Browninan processes are used in an array of ItoIntegrals.
 """
 function brownians_in_use(itos::Dict{Symbol,ItoIntegral}, brownians::Array{Symbol,1})
-    brownians_in_use = unique(map(x -> x.brownian_id_ , values(itos)))
-    indices_in_use   = unique(findall(map(x -> x in brownians_in_use , brownians)))
+    all_brownians_in_use = unique(map(x -> x.brownian_id_ , values(itos)))
+    indices_in_use   = unique(findall(map(x -> x in all_brownians_in_use , brownians)))
     reduced_brownian_list = brownians[indices_in_use]
-    return indices_in_use, reduced_brownian_list
+    return all_brownians_in_use, indices_in_use, reduced_brownian_list
 end
 
 """
@@ -107,7 +107,10 @@ struct ItoSet
         if (size(brownian_ids)[1] != size(brownian_corr_matrix)[1])
             error("The shape of brownian_ids_ must match the number of rows/columns of brownian_correlation_matrix_")
         end
-          used_brownian_indices, brown_ids = brownians_in_use(ito_integrals, brownian_ids)
+          all_brownians_in_use, used_brownian_indices, brown_ids = brownians_in_use(ito_integrals, brownian_ids)
+          if length(setdiff(all_brownians_in_use, brownian_ids))
+              error("In creating an ItoSet there are some brownian motions referenced by ito integrals for which there are no corresponding entries in the correlation matrix for brownian motions. Thus an ItoSet cannot be built.")
+          end
           brownian_corr_matrix_subset      = Symmetric(brownian_corr_matrix[used_brownian_indices,used_brownian_indices])
        return new(brownian_corr_matrix_subset, brown_ids, ito_integrals)
     end
