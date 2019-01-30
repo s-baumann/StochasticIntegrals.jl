@@ -185,14 +185,26 @@ struct CovarianceAtDate
     to_::Float64
     covariance_::Symmetric
     covariance_labels_::Array{Symbol,1}
-    chol_::LowerTriangular
-    inverse_::Symmetric
-    determinant_::Float64
-    function CovarianceAtDate(ito_set_::ItoSet, from_::Float64, to_::Float64)
+    chol_::Union{Missing,LowerTriangular}
+    inverse_::Union{Missing,Symmetric}
+    determinant_::Union{Missing,Float64}
+    """
+    CovarianceAtDate(ito_set_::ItoSet, from_::Float64, to_::Float64;
+             calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
+    CovarianceAtDate(ito_set_::ItoSet, from::Date, to::Date)
+    CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Float64, to::Float64)
+    CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Date, to::Date)
+        These are constructors for a CovarianceAtDate struct.
+    """
+    function CovarianceAtDate(ito_set_::ItoSet, from_::Float64, to_::Float64;
+             calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
         covariance_, covariance_labels_ = make_covariance_matrix(ito_set_, from_, to_)
-        chol_              = LowerTriangular(cholesky(covariance_).L)
-        inverse_           = Symmetric(inv(covariance_))
-        determinant_       = det(covariance_)
+        chol_ = missing
+        inverse_ = missing
+        determinant_ = missing
+        if calculate_chol chol_ = LowerTriangular(cholesky(covariance_).L) end
+        if calculate_inverse inverse_           = Symmetric(inv(covariance_)) end
+        if calculate_determinant determinant_       = det(covariance_) end
         return new(ito_set_, from_, to_, covariance_, covariance_labels_, chol_, inverse_, determinant_)
     end
     function CovarianceAtDate(ito_set_::ItoSet, from::Date, to::Date)
