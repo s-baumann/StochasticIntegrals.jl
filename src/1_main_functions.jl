@@ -108,7 +108,7 @@ struct ItoSet
             error("The shape of brownian_ids_ must match the number of rows/columns of brownian_correlation_matrix_")
         end
           all_brownians_in_use, used_brownian_indices, brown_ids = brownians_in_use(ito_integrals, brownian_ids)
-          if length(setdiff(all_brownians_in_use, brownian_ids))
+          if length(setdiff(all_brownians_in_use, brownian_ids)) > 0
               error("In creating an ItoSet there are some brownian motions referenced by ito integrals for which there are no corresponding entries in the correlation matrix for brownian motions. Thus an ItoSet cannot be built.")
           end
           brownian_corr_matrix_subset      = Symmetric(brownian_corr_matrix[used_brownian_indices,used_brownian_indices])
