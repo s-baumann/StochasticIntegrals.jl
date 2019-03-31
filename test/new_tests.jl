@@ -2,7 +2,7 @@ using MultivariateFunctions
 using StochasticIntegrals
 using Dates
 using LinearAlgebra
-using Distributions: Normal, MersenneTwister
+using Distributions: Normal, MersenneTwister, quantile
 using Statistics: var, mean, cov
 using Sobol
 using Random
@@ -154,3 +154,52 @@ Set(labs) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 X, labs = to_array(dd)
 size(X) == (7, 4)
 Set(labs) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
+
+# Testing hypercube generation
+confidence_level = 0.95
+num = 10000
+confidence_hc = get_confidence_hypercube(covar, confidence_level, num)
+# Now each edge should be same number of standard deviations away from the mean:
+devs = confidence_hc[:USD_IR_a][2]/sqrt(covar.covariance_[1,1])
+abs(devs - confidence_hc[:GBP_IR_aB][2]/sqrt(covar.covariance_[2,2])) < tol
+abs(devs - confidence_hc[:GBP_IR_a][2]/sqrt(covar.covariance_[3,3]))  < tol
+abs(devs - confidence_hc[:USD_IR_aB][2]/sqrt(covar.covariance_[4,4])) < tol
+abs(devs - confidence_hc[:GBP_FX][2]/sqrt(covar.covariance_[5,5]))    < tol
+# And the confidence hypercube should contain confidence_level of the distribution.
+function _sobols(chol, num::Int, sob_seq::SobolSeq)
+    dims = size(chol)[1]
+    array = Array{Float64,2}(undef, num, dims)
+    for i in 1:num
+        sobs = next!(sob_seq)
+        normal_draw = quantile.(Ref(Normal()), sobs)
+        scaled_draw = chol * normal_draw
+        array[i,:] = scaled_draw
+    end
+    return array
+end
+function estimate_mass_in_hypercube()
+    dims = length(covar.covariance_labels_)
+    data = _sobols(covar.chol_, num, SobolSeq(dims))
+    number_of_draws = size(data)[1]
+    in_confidence_area = 0
+    cutoffs = devs .* sqrt.(diag(covar.covariance_))
+    for i in 1:number_of_draws
+        in_confidence_area += all(abs.(data[i,:]) .< cutoffs)
+    end
+    mass_in_area = in_confidence_area/number_of_draws
+    return mass_in_area
+end
+abs(estimate_mass_in_hypercube() - confidence_level) < tol
+
+# Testing hypercube generation
+confidence_level = 0.5
+num = 10000
+confidence_hc = get_confidence_hypercube(covar, confidence_level, num)
+# Now each edge should be same number of standard deviations away from the mean:
+devs = confidence_hc[:USD_IR_a][2]/sqrt(covar.covariance_[1,1])
+abs(devs - confidence_hc[:GBP_IR_aB][2]/sqrt(covar.covariance_[2,2])) < tol
+abs(devs - confidence_hc[:GBP_IR_a][2]/sqrt(covar.covariance_[3,3]))  < tol
+abs(devs - confidence_hc[:USD_IR_aB][2]/sqrt(covar.covariance_[4,4])) < tol
+abs(devs - confidence_hc[:GBP_FX][2]/sqrt(covar.covariance_[5,5]))    < tol
+# And the confidence hypercube should contain confidence_level of the distribution.
+abs(estimate_mass_in_hypercube() - confidence_level) < tol
