@@ -1,4 +1,4 @@
-function _one_iterate(cutoff_multiplier::Float64, target::Float64, draws::Array{Float64,2}, covar_matrix::Symmetric, tuning_parameter::Float64)
+function _one_iterate(cutoff_multiplier::Float64, target::Float64, draws::Array{Float64,2}, covar_matrix, tuning_parameter::Float64)
     cutoffs = cutoff_multiplier .* sqrt.(diag(covar_matrix))
     number_of_draws = size(draws)[1]
     in_confidence_area = 0
@@ -25,17 +25,19 @@ end
     get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, data::Array{Float64,2}; tuning_parameter::Float64 = 1.0)
 This returns the endpoints of a hypercube that contains confidence_level% of the dataset. For instance
 """
-function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, data::Array{Float64,2}; tuning_parameter::Float64 = 1.0)
+function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, data::Array{Float64,2}; tuning_parameter::Float64 = 1.0, ConvergenceMetricThreshold::Float64 = 1e-10)
     # Using a univariate guess as we can get these pretty cheaply.
     guess = quantile(Normal(), 0.5*(1+confidence_level))
-    FP = fixed_point(x -> _one_iterate.(x, Ref(confidence_level), Ref(data), Ref(covar.covariance_), Ref(tuning_parameter)), [guess])
+    # This runs once so that any error is explictly thrown and is traceable rather than being obscured by FixedPoint's try-catch
+    #_ = _one_iterate.(guess, Ref(confidence_level), Ref(data), Ref(covar.covariance_), Ref(tuning_parameter))
+    FP = fixed_point(x -> _one_iterate.(x, Ref(confidence_level), Ref(data), Ref(covar.covariance_), Ref(tuning_parameter)), [guess];  Algorithm = Simple, ConvergenceMetricThreshold = ConvergenceMetricThreshold, MaxIter = 10000)
     cutoff_multiplier = FP.FixedPoint_[1]
     cutoffs = vcat(zip(-cutoff_multiplier .* sqrt.(diag(covar.covariance_)) , cutoff_multiplier .* sqrt.(diag(covar.covariance_)))...)
     return Dict{Symbol,Tuple{Float64,Float64}}(covar.covariance_labels_ .=> cutoffs)
 end
 
-function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, num::Int; tuning_parameter::Float64 = 1.0)
+function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, num::Int; tuning_parameter::Float64 = 1.0,  ConvergenceMetricThreshold::Float64 = 1e-10)
     dims = length(covar.covariance_labels_)
     data = _sobols(covar.chol_, num, SobolSeq(dims))
-    return get_confidence_hypercube(covar, confidence_level, data; tuning_parameter = tuning_parameter)
+    return get_confidence_hypercube(covar, confidence_level, data; tuning_parameter = tuning_parameter, ConvergenceMetricThreshold = ConvergenceMetricThreshold)
 end

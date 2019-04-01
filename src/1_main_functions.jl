@@ -344,12 +344,12 @@ end
 get the value of the pdf at some coordinates.
 """
 function pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Float64})
-    # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma(x - \mu))
+    # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma^{-1} (x - \mu))
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)
     x = get.(Ref(coordinates), covar.covariance_labels_, 0)
     one_on_sqrt_of_det_two_pi_covar     = 1/(sqrt(covar.determinant_) * (2*pi)^(rank_of_matrix/2))
-    return one_on_sqrt_of_det_two_pi_covar * exp(-0.5 * x' * covar.covariance_ * x)
+    return one_on_sqrt_of_det_two_pi_covar * exp(-0.5 * x' * covar.inverse_ * x)
 end
 
 """
@@ -362,5 +362,5 @@ function log_likelihood(covar::CovarianceAtDate, coordinates::Dict{Symbol,Float6
     rank_of_matrix = length(covar.covariance_labels_)
     x = get.(Ref(coordinates), covar.covariance_labels_, 0)
     one_on_sqrt_of_det_two_pi_covar     = -0.5*log(covar.determinant_)  +  (rank_of_matrix/2)*log(2*pi)
-    return one_on_sqrt_of_det_two_pi_covar + (-0.5 * x' * covar.covariance_ * x)
+    return one_on_sqrt_of_det_two_pi_covar + (-0.5 * x' * covar.inverse_ * x)
 end
