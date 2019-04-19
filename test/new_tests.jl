@@ -67,11 +67,11 @@ function abs_value_of_dict_differences(dictA::Dict, dictB::Dict)
    differences = merge(-, dictA, dictB)
    return sum(abs.(values(differences)))
 end
-abs_value_of_dict_differences(get_normal_draws(cov_date), get_normal_draws(cov_date)) > tol
-abs_value_of_dict_differences(get_normal_draws(cov_date;  uniform_draw = rand(5)), get_normal_draws(cov_date; uniform_draw =  rand(5))) > tol
+abs_value_of_dict_differences(get_draws(cov_date), get_draws(cov_date)) > tol
+abs_value_of_dict_differences(get_draws(cov_date;  uniform_draw = rand(5)), get_draws(cov_date; uniform_draw =  rand(5))) > tol
 
 function test_random_points_pdf(covar::CovarianceAtDate)
-    draws = get_normal_draws(covar)
+    draws = get_draws(covar)
     pdf_val = pdf(covar, draws)
     return (pdf_val >= 0.0)
 end
@@ -81,11 +81,13 @@ all([test_random_points_pdf(cov_date) for i in 1:1000])
 function SplitDicts(dictarray::Array{Dict{Symbol,Float64}})
     return get.(dictarray, :USD_IR_a, 0), get.(dictarray, :USD_IR_aB, 0), get.(dictarray, :GBP_IR_a, 0), get.(dictarray, :GBP_IR_aB, 0), get.(dictarray, :GBP_FX, 0)
 end
-s = SobolSeq(length(cov_date.ito_set_.ito_integrals_))
-normals = get_normal_draws(cov_date,100000)
+defaults = get_draws(cov_date,100000)
+normal_twister = Mersenne(MersenneTwister(123), length(cov_date.covariance_labels_))
+normals = get_draws(cov_date,100000; number_generator = normal_twister)
 normal_samples = SplitDicts(normals)
 
-sobols = get_sobol_normal_draws(cov_date, 100000)
+s = SobolGen(SobolSeq(length(cov_date.ito_set_.ito_integrals_)))
+sobols = get_draws(cov_date, 100000; number_generator = s)
 sobol_samples = SplitDicts(sobols)
 zero_draws = get_zero_draws(cov_date,2)
 
@@ -97,7 +99,7 @@ abs(var(normal_samples[5]) - get_variance(cov_date, :GBP_FX))    < 0.02
 
 abs(var(sobol_samples[1])  - get_variance(cov_date, :USD_IR_a))  < 1e-04
 abs(var(sobol_samples[2])  - get_variance(cov_date, :USD_IR_aB)) < 0.001
-abs(var(sobol_samples[3])  - get_variance(cov_date, :GBP_IR_a))  < 1e-07
+abs(var(sobol_samples[3])  - get_variance(cov_date, :GBP_IR_a))  < 1e-05
 abs(var(sobol_samples[4])  - get_variance(cov_date, :GBP_IR_aB)) < 1e-05
 abs(var(sobol_samples[5])  - get_variance(cov_date, :GBP_FX))    < 0.02
 
@@ -106,7 +108,7 @@ abs(cov(sobol_samples[5], sobol_samples[1]) - get_covariance(cov_date, :GBP_FX, 
 
 #  Test likelihood
 function test_random_points_loglikelihood(covar::CovarianceAtDate)
-    draws = get_normal_draws(covar)
+    draws = get_draws(covar)
     log_likelihood_val = log_likelihood(covar, draws)
     return log_likelihood_val > -Inf
 end
@@ -114,7 +116,7 @@ all([test_random_points_loglikelihood(cov_date) for i in 1:1000])
 
 
 # Testing data conversions - From draws
-draws = get_normal_draws(cov_date, 7)
+draws = get_draws(cov_date, 7)
 arr, labs = to_array(draws; labels = [:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 size(arr) == (7,4)
 labs ==  [:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB]
@@ -166,7 +168,7 @@ abs(devs - confidence_hc[:GBP_IR_a][2]/sqrt(covar.covariance_[3,3]))  < tol
 abs(devs - confidence_hc[:USD_IR_aB][2]/sqrt(covar.covariance_[4,4])) < tol
 abs(devs - confidence_hc[:GBP_FX][2]/sqrt(covar.covariance_[5,5]))    < tol
 # And the confidence hypercube should contain confidence_level of the distribution.
-function _sobols(chol, num::Int, sob_seq::SobolSeq)
+function _sobols(chol, num::Int, sob_seq::SobolGen)
     dims = size(chol)[1]
     array = Array{Float64,2}(undef, num, dims)
     for i in 1:num
@@ -179,7 +181,7 @@ function _sobols(chol, num::Int, sob_seq::SobolSeq)
 end
 function estimate_mass_in_hypercube()
     dims = length(covar.covariance_labels_)
-    data = _sobols(covar.chol_, num, SobolSeq(dims))
+    data = _sobols(covar.chol_, num, SobolGen(SobolSeq(dims)))
     number_of_draws = size(data)[1]
     in_confidence_area = 0
     cutoffs = devs .* sqrt.(diag(covar.covariance_))
@@ -193,8 +195,8 @@ abs(estimate_mass_in_hypercube() - confidence_level) < tol
 
 # Testing hypercube generation
 confidence_level = 0.5
-num = 10000
-confidence_hc = get_confidence_hypercube(covar, confidence_level, num)
+num = 1000
+confidence_hc = get_confidence_hypercube(covar, confidence_level, 500)
 # Now each edge should be same number of standard deviations away from the mean:
 devs = confidence_hc[:USD_IR_a][2]/sqrt(covar.covariance_[1,1])
 abs(devs - confidence_hc[:GBP_IR_aB][2]/sqrt(covar.covariance_[2,2])) < tol
@@ -202,4 +204,38 @@ abs(devs - confidence_hc[:GBP_IR_a][2]/sqrt(covar.covariance_[3,3]))  < tol
 abs(devs - confidence_hc[:USD_IR_aB][2]/sqrt(covar.covariance_[4,4])) < tol
 abs(devs - confidence_hc[:GBP_FX][2]/sqrt(covar.covariance_[5,5]))    < tol
 # And the confidence hypercube should contain confidence_level of the distribution.
-abs(estimate_mass_in_hypercube() - confidence_level) < tol
+abs(estimate_mass_in_hypercube() - confidence_level) < 0.03
+
+
+
+
+# Testing Antithetic Variates
+normals_antithetic = get_draws(cov_date,100000; number_generator = normal_twister, antithetic_variates = true)
+normal_samples_antithetic = SplitDicts(normals_antithetic)
+## Antithetic should have lower variance due to some data copying.
+var(normal_samples[1]) > var(normal_samples_antithetic[1])
+## Antithetic each pair should sum to 0. So whole vector should sum to zero.
+sum(normal_samples_antithetic[1]) < tol
+sum(normal_samples_antithetic[2]) < tol
+sum(normal_samples_antithetic[3]) < tol
+sum(normal_samples_antithetic[4]) < tol
+sum(normal_samples_antithetic[5]) < tol
+
+# Now we will do a test for finding the expectation of a lognormal.
+theoretical_expectation = exp(get_variance(cov_date, :USD_IR_a)/2)
+log_normal_samples = exp.(normal_samples[1])
+log_normal_expectation_estimate = mean(log_normal_samples)
+log_normal_antithetic_samples = exp.(normal_samples_antithetic[1])
+log_normal_antithetic_expectation_estimate = mean(log_normal_antithetic_samples)
+abs(log_normal_antithetic_expectation_estimate - theoretical_expectation) < abs(log_normal_expectation_estimate - theoretical_expectation)
+
+# Now using importance sampling. We will use a function to increase probability of high numbers.
+#function import_sampler(x::Array{Float64,1})
+#    return 1 .- (x.^2)
+#end
+
+#importance_sampler = ImportanceSampler(normal_twister, import_sampler)
+#is_samples = get_draws(cov_date,100000; number_generator = importance_sampler)
+#is_samples = SplitDicts(is_samples)[1]
+#log_normal_is_samples = exp.(is_samples)
+#log_normal_is_expectation_estimate = mean(log_normal_is_samples)
