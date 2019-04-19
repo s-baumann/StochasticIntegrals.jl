@@ -20,10 +20,22 @@ function _sobols(chol, num::Int, sob_seq::SobolSeq)
     end
     return array
 end
+function _randoms(chol, num::Int, Seed::Int)
+    twist = MersenneTwister(Seed)
+    dims = size(chol)[1]
+    array = Array{Float64,2}(undef, num, dims)
+    for i in 1:num
+        sobs = rand(twist, dims)
+        normal_draw = quantile.(Ref(Normal()), sobs)
+        scaled_draw = chol * normal_draw
+        array[i,:] = scaled_draw
+    end
+    return array
+end
 
 """
     get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, data::Array{Float64,2}; tuning_parameter::Float64 = 1.0)
-This returns the endpoints of a hypercube that contains confidence_level% of the dataset. For instance
+This returns the endpoints of a hypercube that contains confidence_level% of the dataset.
 """
 function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, data::Array{Float64,2}; tuning_parameter::Float64 = 1.0, ConvergenceMetricThreshold::Float64 = 1e-10)
     # Using a univariate guess as we can get these pretty cheaply.
@@ -38,6 +50,6 @@ end
 
 function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, num::Int; tuning_parameter::Float64 = 1.0,  ConvergenceMetricThreshold::Float64 = 1e-10)
     dims = length(covar.covariance_labels_)
-    data = _sobols(covar.chol_, num, SobolSeq(dims))
+    data = _randoms(covar.chol_, num, 1)
     return get_confidence_hypercube(covar, confidence_level, data; tuning_parameter = tuning_parameter, ConvergenceMetricThreshold = ConvergenceMetricThreshold)
 end
