@@ -33,6 +33,9 @@ end
 Get the variance of an ItoIntegral from one point of time to another.
 """
 function get_variance(ito::ItoIntegral, from::Float64, to::Float64)
+    if from + eps() > to
+        return 0.0;
+    end
     return integral(ito.f_^2, from, to)
 end
 function get_variance(ito::ItoIntegral, base::Date, from::Date, to::Date)
@@ -55,6 +58,9 @@ end
 Get the covariance of two ItoIntegrals over a certain period given the underlying Brownian processes have a correlation of gaussian_correlation.
 """
 function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Float64, to::Float64, gaussian_correlation::Float64)
+    if from + eps() >= to
+        return 0.0;
+    end
     return gaussian_correlation * integral(ito1.f_ * ito2.f_, from, to)
 end
 function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Date, from::Date, to::Date, gaussian_correlation::Float64)
@@ -207,10 +213,12 @@ struct CovarianceAtDate
         if calculate_determinant determinant_       = det(covariance_) end
         return new(ito_set_, from_, to_, covariance_, covariance_labels_, chol_, inverse_, determinant_)
     end
-    function CovarianceAtDate(ito_set_::ItoSet, from::Date, to::Date)
+    function CovarianceAtDate(ito_set_::ItoSet, from::Date, to::Date;
+             calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
         from_ = years_from_global_base(from)
         to_   = years_from_global_base(to)
-        return CovarianceAtDate(ito_set_, from_, to_)
+        return CovarianceAtDate(ito_set_, from_, to_; calculate_chol = calculate_chol,
+                  calculate_inverse = calculate_inverse, calculate_determinant = calculate_determinant)
     end
     function CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Float64, to::Float64)
         return CovarianceAtDate(old_CovarianceAtDate.ito_set_, from, to)
