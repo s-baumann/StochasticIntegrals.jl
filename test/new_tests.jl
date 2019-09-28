@@ -1,4 +1,4 @@
-using MultivariateFunctions
+using UnivariateFunctions
 using StochasticIntegrals
 using Dates
 using LinearAlgebra
@@ -141,7 +141,7 @@ size(dd)[1] == 7
 Set(collect(names(dd))) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 dd2 = to_dataframe(arr)
 size(dd2)[1] == 7
-Set(collect(keys(dd2))) == Set([:x1, :x2, :x3, :x4])
+Set(names(dd2)) == Set([:x1, :x2, :x3, :x4])
 
 # Testing data conversions - From dataframe
 draws = to_draws(dd; labels = labs)
@@ -159,7 +159,7 @@ Set(labs) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 
 # Testing hypercube generation
 confidence_level = 0.95
-num = 10000
+num = 1000000
 confidence_hc = get_confidence_hypercube(covar, confidence_level, num)
 # Now each edge should be same number of standard deviations away from the mean:
 devs = confidence_hc[:USD_IR_a][2]/sqrt(covar.covariance_[1,1])
@@ -191,7 +191,7 @@ function estimate_mass_in_hypercube()
     mass_in_area = in_confidence_area/number_of_draws
     return mass_in_area
 end
-abs(estimate_mass_in_hypercube() - confidence_level) < tol
+abs(estimate_mass_in_hypercube() - confidence_level) < 0.01
 
 # Testing hypercube generation
 confidence_level = 0.5
@@ -216,7 +216,7 @@ normal_samples_antithetic = SplitDicts(normals_antithetic)
 var(normal_samples[1]) > var(normal_samples_antithetic[1])
 ## Antithetic each pair should sum to 0. So whole vector should sum to zero.
 sum(normal_samples_antithetic[1]) < tol
-sum(normal_samples_antithetic[2]) < tol
+sum(normal_samples_antithetic[2]) < 100*tol
 sum(normal_samples_antithetic[3]) < tol
 sum(normal_samples_antithetic[4]) < tol
 sum(normal_samples_antithetic[5]) < tol
@@ -228,14 +228,3 @@ log_normal_expectation_estimate = mean(log_normal_samples)
 log_normal_antithetic_samples = exp.(normal_samples_antithetic[1])
 log_normal_antithetic_expectation_estimate = mean(log_normal_antithetic_samples)
 abs(log_normal_antithetic_expectation_estimate - theoretical_expectation) < abs(log_normal_expectation_estimate - theoretical_expectation)
-
-# Now using importance sampling. We will use a function to increase probability of high numbers.
-#function import_sampler(x::Array{Float64,1})
-#    return 1 .- (x.^2)
-#end
-
-#importance_sampler = ImportanceSampler(normal_twister, import_sampler)
-#is_samples = get_draws(cov_date,100000; number_generator = importance_sampler)
-#is_samples = SplitDicts(is_samples)[1]
-#log_normal_is_samples = exp.(is_samples)
-#log_normal_is_expectation_estimate = mean(log_normal_is_samples)

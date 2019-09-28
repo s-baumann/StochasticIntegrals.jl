@@ -2,28 +2,21 @@ const tol = 10*eps()
 
 """
 ItoIntegral
-A struct detailing an ito integral. It contains a MultivariateFunction detailing the integrand as well as a symbol detailing an id of the integral's processes.
+A struct detailing an ito integral. It contains a UnivariateFunction detailing the integrand as well as a symbol detailing an id of the integral's processes.
 
 Usual (and most general) contructor is:
-    ItoIntegral(brownian_id_::Symbol, f_::MultivariateFunction)
+    ItoIntegral(brownian_id_::Symbol, f_::UnivariateFunction)
 Convenience constructor for ItoIntegrals where the integrand is a flat function is:
     ItoIntegral(brownian_id_::Symbol, variance_::Float64)
 """
 struct ItoIntegral
     brownian_id_::Symbol
-    f_::MultivariateFunction
+    f_::UnivariateFunction
     function ItoIntegral(brownian_id_::Symbol, variance_::Float64)
         return new(brownian_id_, PE_Function(variance_, 0.0, 0.0, 0))
     end
-    function ItoIntegral(brownian_id_::Symbol, f::MultivariateFunction)
-        underlying = underlying_dimensions(f)
-        if length(underlying) == 0
-            return new(brownian_id_, f)
-        elseif length(underlying) > 1
-            error("At present it is only possible to create an ItoIntegral with a one dimensional MultivariateFunction with that one dimension being the time dimension.")
-        end
-        f2 = rebadge(f, Dict{Symbol,Symbol}(pop!(underlying) => :default))
-        return new(brownian_id_, f2)
+    function ItoIntegral(brownian_id_::Symbol, f_::UnivariateFunction)
+        return new(brownian_id_, f_)
     end
 end
 
@@ -36,7 +29,7 @@ function get_variance(ito::ItoIntegral, from::Float64, to::Float64)
     if from + eps() > to
         return 0.0;
     end
-    return integral(ito.f_^2, from, to)
+    return evaluate_integral(ito.f_^2, from, to)
 end
 function get_variance(ito::ItoIntegral, base::Date, from::Date, to::Date)
     from_fl = years_between(from, base)
@@ -61,7 +54,7 @@ function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Float64, to::
     if from + eps() >= to
         return 0.0;
     end
-    return gaussian_correlation * integral(ito1.f_ * ito2.f_, from, to)
+    return gaussian_correlation * evaluate_integral(ito1.f_ * ito2.f_, from, to)
 end
 function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Date, from::Date, to::Date, gaussian_correlation::Float64)
     from_fl = years_between(from, base)

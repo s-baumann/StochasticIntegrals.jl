@@ -4,7 +4,7 @@ using DataFrames
 using Dates
 using Distributions: Normal, quantile
 using LinearAlgebra: Symmetric, cholesky, inv, det, LowerTriangular, diag
-using MultivariateFunctions
+using UnivariateFunctions
 using Random
 using Sobol: SobolSeq, next!
 using FixedPointAcceleration

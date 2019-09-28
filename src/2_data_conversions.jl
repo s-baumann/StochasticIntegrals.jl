@@ -18,7 +18,7 @@ end
 function to_array(dd::DataFrame; labels::Array{Symbol,1} = names(dd))
     X = Array{Float64,2}(undef,size(dd)[1], length(labels))
     for c in 1:length(labels)
-        X[:,c] = dd[labels[c]]
+        X[:,c] = dd[!,labels[c]]
     end
     return X, labels
 end
@@ -45,7 +45,7 @@ function to_draws(dd::DataFrame; labels::Array{Symbol,1} = names(dd))
     for i in 1:size(dd)[1]
         draw = Dict{Symbol,Float64}()
         for j in labels
-            draw[j] = dd[j][i]
+            draw[j] = dd[!,j][i]
         end
         draws = vcat(draws, draw)
     end
@@ -61,7 +61,7 @@ Convert arrys or vectors of dicts to a dataframe.
 function to_dataframe(X::Array{Float64,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X)[2]))
     dd = DataFrame()
         for j in 1:length(labels)
-            dd[labels[j]] = X[:,j]
+            dd[!,labels[j]] = X[:,j]
         end
     return dd
 end
@@ -73,7 +73,7 @@ function to_dataframe(draws::Array{Dict{Symbol,Float64},1}; labels::Array{Symbol
         for j in 1:length(draws)
             q[j] = draws[j][lab]
         end
-        dd[lab] = q
+        dd[!,lab] = q
     end
     return dd
 end
