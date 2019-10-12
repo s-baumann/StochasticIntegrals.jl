@@ -78,7 +78,7 @@ end
 all([test_random_points_pdf(cov_date) for i in 1:1000])
 
 # Distribution Testing
-function SplitDicts(dictarray::Array{Dict{Symbol,Float64}})
+function SplitDicts(dictarray)
     return get.(dictarray, :USD_IR_a, 0), get.(dictarray, :USD_IR_aB, 0), get.(dictarray, :GBP_IR_a, 0), get.(dictarray, :GBP_IR_aB, 0), get.(dictarray, :GBP_FX, 0)
 end
 defaults = get_draws(cov_date,100000)
