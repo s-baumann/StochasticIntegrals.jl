@@ -19,5 +19,7 @@ include("2_data_conversions.jl")
 export to_draws, to_dataframe, to_array
 include("3_getConfidenceHypercube.jl")
 export get_confidence_hypercube
+include("5_conditional_distributions.jl")
+export generate_conditioned_distribution
 
 end

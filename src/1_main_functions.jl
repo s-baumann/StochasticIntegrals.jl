@@ -7,12 +7,12 @@ A struct detailing an ito integral. It contains a UnivariateFunction detailing t
 Usual (and most general) contructor is:
     ItoIntegral(brownian_id_::Symbol, f_::UnivariateFunction)
 Convenience constructor for ItoIntegrals where the integrand is a flat function is:
-    ItoIntegral(brownian_id_::Symbol, variance_::Float64)
+    ItoIntegral(brownian_id_::Symbol, variance_::Real)
 """
 struct ItoIntegral
     brownian_id_::Symbol
     f_::UnivariateFunction
-    function ItoIntegral(brownian_id_::Symbol, variance_::Float64)
+    function ItoIntegral(brownian_id_::Symbol, variance_::Real)
         return new(brownian_id_, PE_Function(variance_, 0.0, 0.0, 0))
     end
     function ItoIntegral(brownian_id_::Symbol, f_::UnivariateFunction)
@@ -21,11 +21,11 @@ struct ItoIntegral
 end
 
 """
-    get_variance(ito::ItoIntegral, from::Float64, to::Float64)
+    get_variance(ito::ItoIntegral, from::Real, to::Real)
     get_variance(ito::ItoIntegral, base::Date, from::Date, to::Date)
 Get the variance of an ItoIntegral from one point of time to another.
 """
-function get_variance(ito::ItoIntegral, from::Float64, to::Float64)
+function get_variance(ito::ItoIntegral, from::Real, to::Real)
     if from + eps() > to
         return 0.0;
     end
@@ -46,34 +46,34 @@ function get_volatility(ito::ItoIntegral, on::Date)
 end
 
 """
-    get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Float64, to::Float64, gaussian_correlation::Float64)
-    get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Date, from::Date, to::Date, gaussian_correlation::Float64)
+    get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
+    get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Date, from::Date, to::Date, gaussian_correlation::Real)
 Get the covariance of two ItoIntegrals over a certain period given the underlying Brownian processes have a correlation of gaussian_correlation.
 """
-function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Float64, to::Float64, gaussian_correlation::Float64)
+function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
     if from + eps() >= to
         return 0.0;
     end
     return gaussian_correlation * evaluate_integral(ito1.f_ * ito2.f_, from, to)
 end
-function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Date, from::Date, to::Date, gaussian_correlation::Float64)
+function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Date, from::Date, to::Date, gaussian_correlation::Real)
     from_fl = years_between(from, base)
     to_fl   = years_between(to, base)
     return get_covariance(ito1, ito2, from_fl, to_fl, gaussian_correlation)
 end
 
 """
-    get_correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Float64, to::Float64, gaussian_correlation::Float64)
-    get_correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Date, from::Date, to::Date, gaussian_correlation::Float64)
+    get_correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
+    get_correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Date, from::Date, to::Date, gaussian_correlation::Real)
 Get the correlation of two ItoIntegrals over a certain period given the underlying Brownian processes have a correlation of gaussian_correlation.
 """
-function get_correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Float64, to::Float64, gaussian_correlation::Float64)
+function get_correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
     cov =  covar(ito1,ito2, base, from, to, gaussian_correlation)
     var1 = var(ito1, from, to)
     var2 = var(ito2, from, to)
     return gaussian_correlation * (cov / (var1 * var2))
 end
-function get_correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Date, from::Date, to::Date, gaussian_correlation::Float64)
+function get_correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Date, from::Date, to::Date, gaussian_correlation::Real)
     from_fl = years_between(from, base)
     to_fl   = years_between(to, base)
     return get_correlation(ito1, ito2, from_fl, to_fl, gaussian_correlation)
@@ -98,29 +98,29 @@ Creates an ItoSet. This contains :
 * A dict of ItoInterals. Here the keys should be ids for the ito integrals and the values should be ItoIntegrals.
 Determine which Brownian processes are used in an array of ItoIntegrals.
 """
-struct ItoSet
-    brownian_correlation_matrix_::Symmetric
+struct ItoSet{T<:Real}
+    brownian_correlation_matrix_::Symmetric{T}
     brownian_ids_::Array{Symbol,1}
     ito_integrals_::Dict{Symbol,ItoIntegral}
-    function ItoSet(brownian_corr_matrix::Symmetric, brownian_ids::Array{Symbol,1}, ito_integrals::Dict{Symbol,ItoIntegral})
+    function ItoSet(brownian_corr_matrix::Symmetric{T}, brownian_ids::Array{Symbol,1}, ito_integrals::Dict{Symbol,ItoIntegral}) where T<:Real
         if (size(brownian_ids)[1] != size(brownian_corr_matrix)[1])
             error("The shape of brownian_ids_ must match the number of rows/columns of brownian_correlation_matrix_")
         end
           all_brownians_in_use, used_brownian_indices, brown_ids = brownians_in_use(ito_integrals, brownian_ids)
           if length(setdiff(all_brownians_in_use, brownian_ids)) > 0
-              error("In creating an ItoSet there are some brownian motions referenced by ito integrals for which there are no corresponding entries in the correlation matrix for brownian motions. Thus an ItoSet cannot be built.")
+              error(string("In creating an ItoSet there are some brownian motions referenced by ito integrals for which there are no corresponding entries in the correlation matrix for brownian motions. Thus an ItoSet cannot be built. These include ", setdiff(all_brownians_in_use, brownian_ids)))
           end
           brownian_corr_matrix_subset      = Symmetric(brownian_corr_matrix[used_brownian_indices,used_brownian_indices])
-       return new(brownian_corr_matrix_subset, brown_ids, ito_integrals)
+       return new{T}(brownian_corr_matrix_subset, brown_ids, ito_integrals)
     end
 end
 
 """
-    get_correlation(ito::ItoSet, index1::Int, index2::Int)
+    get_correlation(ito::ItoSet, index1::Integer, index2::Integer)
     get_correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
 Get correlation between brownian motions in an ItoSet.
 """
-function get_correlation(ito::ItoSet, index1::Int, index2::Int)
+function get_correlation(ito::ItoSet, index1::Integer, index2::Integer)
     return ito.brownian_correlation_matrix_[index1, index2]
 end
 function get_correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
@@ -130,11 +130,11 @@ function get_correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol
 end
 
 """
-    get_volatility(ito::ItoSet, index::Int, on::Date)
+    get_volatility(ito::ItoSet, index::Integer, on::Date)
     get_volatility(ito::ItoSet, ito_integral_id::Symbol, on::Date)
 Get volatility of an ito_integral on a date.
 """
-function get_volatility(ito::ItoSet, index::Int, on::Date)
+function get_volatility(ito::ItoSet, index::Integer, on::Date)
     return get_volatility(ito.ito_integrals_[index], on)
 end
 
@@ -144,13 +144,13 @@ function get_volatility(ito::ItoSet, ito_integral_id::Symbol, on::Date)
 end
 
 """
-    make_covariance_matrix(ito_set_::ItoSet, from::Float64, to::Float64)
+    make_covariance_matrix(ito_set_::ItoSet, from::Real, to::Real)
 Make a covariance matrix given an ItoSet and a period of time.
 """
-function make_covariance_matrix(ito_set_::ItoSet, from::Float64, to::Float64)
+function make_covariance_matrix(ito_set_::ItoSet{T}, from::Real, to::Real) where T<:Real
     number_of_itos = length(ito_set_.ito_integrals_)
     ito_ids = collect(keys(ito_set_.ito_integrals_))
-    cov = Array{Float64,2}(undef, number_of_itos,number_of_itos)
+    cov = Array{T,2}(undef, number_of_itos,number_of_itos)
     for r in 1:number_of_itos
         rito = ito_set_.ito_integrals_[ito_ids[r]]
         for c in r:number_of_itos
@@ -180,22 +180,22 @@ And in the constructor the following items are generated and stored in the objec
 """
 struct CovarianceAtDate
     ito_set_::ItoSet
-    from_::Float64
-    to_::Float64
+    from_::Real
+    to_::Real
     covariance_::Symmetric
     covariance_labels_::Array{Symbol,1}
     chol_::Union{Missing,LowerTriangular}
     inverse_::Union{Missing,Symmetric}
-    determinant_::Union{Missing,Float64}
+    determinant_::Union{Missing,Real}
     """
-    CovarianceAtDate(ito_set_::ItoSet, from_::Float64, to_::Float64;
+    CovarianceAtDate(ito_set_::ItoSet, from_::Real, to_::Real;
              calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
     CovarianceAtDate(ito_set_::ItoSet, from::Date, to::Date)
-    CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Float64, to::Float64)
+    CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Real, to::Real)
     CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Date, to::Date)
         These are constructors for a CovarianceAtDate struct.
     """
-    function CovarianceAtDate(ito_set_::ItoSet, from_::Float64, to_::Float64;
+    function CovarianceAtDate(ito_set_::ItoSet, from_::Real, to_::Real;
              calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
         covariance_, covariance_labels_ = make_covariance_matrix(ito_set_, from_, to_)
         chol_ = missing
@@ -213,7 +213,7 @@ struct CovarianceAtDate
         return CovarianceAtDate(ito_set_, from_, to_; calculate_chol = calculate_chol,
                   calculate_inverse = calculate_inverse, calculate_determinant = calculate_determinant)
     end
-    function CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Float64, to::Float64)
+    function CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Real, to::Real)
         return CovarianceAtDate(old_CovarianceAtDate.ito_set_, from, to)
     end
     function CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Date, to::Date)
@@ -222,11 +222,11 @@ struct CovarianceAtDate
 end
 
 """
-    get_volatility(covar::CovarianceAtDate, index::Int, on::Date)
+    get_volatility(covar::CovarianceAtDate, index::Integer, on::Date)
     get_volatility(covar::CovarianceAtDate, id::Symbol, on::Date)
 Get the volatility of an ItoIntegral on a date..
 """
-function get_volatility(covar::CovarianceAtDate, index::Int, on::Date)
+function get_volatility(covar::CovarianceAtDate, index::Integer, on::Date)
     return get_volatility(covar.ito_set_, index, on)
 end
 function get_volatility(covar::CovarianceAtDate, id::Symbol, on::Date)
@@ -235,23 +235,23 @@ end
 
 """
     get_variance(covar::CovarianceAtDate, id::Symbol)
-    get_variance(covar::CovarianceAtDate, index::Int)
+    get_variance(covar::CovarianceAtDate, index::Integer)
 Get the variance of an ItoIntegral over a period.
 """
 function get_variance(covar::CovarianceAtDate, id::Symbol)
         index = findall(id .== covar.covariance_labels_)[1]
         return get_variance(covar, index)
 end
-function get_variance(covar::CovarianceAtDate, index::Int)
+function get_variance(covar::CovarianceAtDate, index::Integer)
     return covar.covariance_[index,index]
 end
 
 """
-    get_covariance(covar::CovarianceAtDate, index_1::Int, index_2::Int)
+    get_covariance(covar::CovarianceAtDate, index_1::Integer, index_2::Integer)
     get_covariance(covar::CovarianceAtDate, id1::Symbol, id2::Symbol)
 Get the covariance of two ItoIntegrals over a period.
 """
-function get_covariance(covar::CovarianceAtDate, index_1::Int, index_2::Int)
+function get_covariance(covar::CovarianceAtDate, index_1::Integer, index_2::Integer)
     return covar.covariance_[index_1,index_2]
 end
 function get_covariance(covar::CovarianceAtDate, id1::Symbol, id2::Symbol)
@@ -261,11 +261,11 @@ function get_covariance(covar::CovarianceAtDate, id1::Symbol, id2::Symbol)
 end
 
 """
-    get_correlation(covar::CovarianceAtDate, index_1::Int, index_2::Int)
+    get_correlation(covar::CovarianceAtDate, index_1::Integer, index_2::Integer)
     get_correlation(covar::CovarianceAtDate, id1::Symbol, id2::Symbol)
 Get the correlation of two ItoIntegrals over a period.
 """
-function get_correlation(covar::CovarianceAtDate, index_1::Int, index_2::Int)
+function get_correlation(covar::CovarianceAtDate, index_1::Integer, index_2::Integer)
     covariance = get_covariance(covar, index_1, index_2)
     var1  = get_variance(covar, index_1)
     var2  = get_variance(covar, index_2)
@@ -279,23 +279,23 @@ end
 
 ## Random draws
 """
-    get_draws(covar::CovarianceAtDate; uniform_draw::Array{Float64} = rand(length(covar.covariance_labels_)))
-    get_draws(covar::CovarianceAtDate, num::Int; twister::MersenneTwister = MersenneTwister(1234), antithetic_variates = false)
+    get_draws(covar::CovarianceAtDate; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
+    get_draws(covar::CovarianceAtDate, num::Integer; twister::MersenneTwister = MersenneTwister(1234), antithetic_variates = false)
 get pseudorandom draws from a CovarianceAtDate struct. Other schemes (like quasirandom) can be done by inserting quasirandom
 numbers in as the uniform_draw.
 If the antithetic_variates control is set to true then every second set of draws will be antithetic to the previous.
 """
-function get_draws(covar::CovarianceAtDate; uniform_draw::Array{Float64} = rand(length(covar.covariance_labels_)))
+function get_draws(covar::CovarianceAtDate; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
     number_of_itos = length(covar.covariance_labels_)
     normal_draw = quantile.(Ref(Normal()), uniform_draw)
     scaled_draw = covar.chol_ * normal_draw
-    first_set_of_draws = Dict{Symbol,Float64}(covar.covariance_labels_ .=> scaled_draw)
+    first_set_of_draws = Dict{Symbol,Real}(covar.covariance_labels_ .=> scaled_draw)
     return first_set_of_draws
 end
-function get_draws(covar::CovarianceAtDate, num::Int; number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)), antithetic_variates = false)
+function get_draws(covar::CovarianceAtDate, num::Integer; number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)), antithetic_variates = false)
     if antithetic_variates
         half_num = convert(Int, round(num/2))
-        array_of_dicts = Array{Dict{Symbol,Float64}}(undef, half_num*2)
+        array_of_dicts = Array{Dict{Symbol,Real}}(undef, half_num*2)
         number_of_itos = length(covar.covariance_labels_)
         for i in 1:half_num
             first_entry = 2*(i-1)+1
@@ -305,7 +305,7 @@ function get_draws(covar::CovarianceAtDate, num::Int; number_generator::NumberGe
         end
         return array_of_dicts
     else
-        array_of_dicts = Array{Dict{Symbol,Float64}}(undef, num)
+        array_of_dicts = Array{Dict{Symbol,Real}}(undef, num)
         number_of_itos = length(covar.covariance_labels_)
         for i in 1:num
             draw =  next!(number_generator)
@@ -321,15 +321,15 @@ end
 get a draw of zero for all ito_integrals. May be handy for bug hunting.
 """
 function get_zero_draws(covar::CovarianceAtDate)
-    return Dict{Symbol,Float64}(covar.covariance_labels_ .=> 0.0)
+    return Dict{Symbol,Real}(covar.covariance_labels_ .=> 0.0)
 end
 # This is most likely useful for bug hunting.
 """
-    get_zero_draws(covar::CovarianceAtDate, num::Int)
+    get_zero_draws(covar::CovarianceAtDate, num::Integer)
 get an array of zero draws for all ito_integrals. May be handy for bug hunting.
 """
-function get_zero_draws(covar::CovarianceAtDate, num::Int)
-    array_of_dicts = Array{Dict{Symbol,Float64}}(undef, num)
+function get_zero_draws(covar::CovarianceAtDate, num::Integer)
+    array_of_dicts = Array{Dict{Symbol,Real}}(undef, num)
     for i in 1:num
         array_of_dicts[i] = get_zero_draws(covar)
     end
@@ -337,10 +337,10 @@ function get_zero_draws(covar::CovarianceAtDate, num::Int)
 end
 
 """
-    pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Float64})
+    pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
 get the value of the pdf at some coordinates.
 """
-function pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Float64})
+function pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma^{-1} (x - \mu))
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)
@@ -350,10 +350,10 @@ function pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Float64})
 end
 
 """
-    log_likelihood(covar::CovarianceAtDate, coordinates::Dict{Symbol,Float64})
+    log_likelihood(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
 get the log likelihood at some coordinates.
 """
-function log_likelihood(covar::CovarianceAtDate, coordinates::Dict{Symbol,Float64})
+function log_likelihood(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma(x - \mu))
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)

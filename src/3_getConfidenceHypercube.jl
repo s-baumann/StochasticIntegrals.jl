@@ -1,4 +1,4 @@
-function _one_iterate(cutoff_multiplier::Float64, target::Float64, draws::Array{Float64,2}, covar_matrix, tuning_parameter::Float64)
+function _one_iterate(cutoff_multiplier::Real, target::Real, draws::Array{T,2}, covar_matrix, tuning_parameter::Real) where T<:Real
     cutoffs = cutoff_multiplier .* sqrt.(diag(covar_matrix))
     number_of_draws = size(draws)[1]
     in_confidence_area = 0
@@ -9,9 +9,10 @@ function _one_iterate(cutoff_multiplier::Float64, target::Float64, draws::Array{
     confidence_gap = target - mass_in_area
     return cutoff_multiplier + confidence_gap * tuning_parameter
 end
-function _sobols(chol, num::Int, sob_seq::SobolSeq)
+function _sobols(chol, num::Integer, sob_seq::SobolSeq)
     dims = size(chol)[1]
-    array = Array{Float64,2}(undef, num, dims)
+    float_type = typeof(chol[1,1])
+    array = Array{float_type,2}(undef, num, dims)
     for i in 1:num
         sobs = next!(sob_seq)
         normal_draw = quantile.(Ref(Normal()), sobs)
@@ -20,10 +21,11 @@ function _sobols(chol, num::Int, sob_seq::SobolSeq)
     end
     return array
 end
-function _randoms(chol, num::Int, Seed::Int)
+function _randoms(chol, num::Integer, Seed::Integer)
     twist = MersenneTwister(Seed)
     dims = size(chol)[1]
-    array = Array{Float64,2}(undef, num, dims)
+    float_type = typeof(chol[1,1])
+    array = Array{float_type,2}(undef, num, dims)
     for i in 1:num
         sobs = rand(twist, dims)
         normal_draw = quantile.(Ref(Normal()), sobs)
@@ -34,10 +36,10 @@ function _randoms(chol, num::Int, Seed::Int)
 end
 
 """
-    get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, data::Array{Float64,2}; tuning_parameter::Float64 = 1.0)
+    get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Real, data::Array{T,2}; tuning_parameter::Real = 1.0)
 This returns the endpoints of a hypercube that contains confidence_level% of the dataset.
 """
-function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, data::Array{Float64,2}; tuning_parameter::Float64 = 1.0, ConvergenceMetricThreshold::Float64 = 1e-10)
+function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Real, data::Array{T,2}; tuning_parameter::Real = 1.0, ConvergenceMetricThreshold::Real = 1e-10) where T<:Real
     # Using a univariate guess as we can get these pretty cheaply.
     guess = quantile(Normal(), 0.5*(1+confidence_level))
     # This runs once so that any error is explictly thrown and is traceable rather than being obscured by FixedPoint's try-catch
@@ -45,10 +47,10 @@ function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Flo
     FP = fixed_point(x -> _one_iterate.(x, Ref(confidence_level), Ref(data), Ref(covar.covariance_), Ref(tuning_parameter)), [guess];  Algorithm = Simple, ConvergenceMetricThreshold = ConvergenceMetricThreshold, MaxIter = 10000)
     cutoff_multiplier = FP.FixedPoint_[1]
     cutoffs = vcat(zip(-cutoff_multiplier .* sqrt.(diag(covar.covariance_)) , cutoff_multiplier .* sqrt.(diag(covar.covariance_)))...)
-    return Dict{Symbol,Tuple{Float64,Float64}}(covar.covariance_labels_ .=> cutoffs)
+    return Dict{Symbol,Tuple{T,T}}(covar.covariance_labels_ .=> cutoffs)
 end
 
-function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Float64, num::Int; tuning_parameter::Float64 = 1.0,  ConvergenceMetricThreshold::Float64 = 1e-10)
+function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Real, num::Integer; tuning_parameter::Real = 1.0,  ConvergenceMetricThreshold::Real = 1e-10)
     dims = length(covar.covariance_labels_)
     data = _randoms(covar.chol_, num, 1)
     return get_confidence_hypercube(covar, confidence_level, data; tuning_parameter = tuning_parameter, ConvergenceMetricThreshold = ConvergenceMetricThreshold)
