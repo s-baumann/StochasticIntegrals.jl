@@ -1,9 +1,9 @@
 
 """
-    generate_conditioned_dist(covar::CovarianceAtDate, conditioning_draws::Array{Symbol,T}) where T<:Real
+    generate_conditioned_dist(covar::ForwardCovariance, conditioning_draws::Array{Symbol,T}) where T<:Real
 Given some subset of known stochastic integral values this generates a conditional multivariate normal distribution.
 """
-function generate_conditioned_distribution(covar::CovarianceAtDate, conditioning_draws::Dict{Symbol,T}) where T<:Real
+function generate_conditioned_distribution(covar::ForwardCovariance, conditioning_draws::Dict{Symbol,T}) where T<:Real
     # https://stats.stackexchange.com/questions/30588/deriving-the-conditional-distributions-of-a-multivariate-normal-distribution
     what_conditioned_on = collect(keys(conditioning_draws))
     len = length(what_conditioned_on)

@@ -166,8 +166,8 @@ function make_covariance_matrix(ito_set_::ItoSet{T}, from::Real, to::Real) where
 end
 
 """
-    CovarianceAtDate
-Creates an CovarianceAtDate object. This contains :
+    ForwardCovariance
+Creates an ForwardCovariance object. This contains :
 * An Itoset
 * Time From
 * Time To
@@ -178,7 +178,7 @@ And in the constructor the following items are generated and stored in the objec
 * The inverse of the covariance matrix.
 * The determinant of the covariance matrix.
 """
-struct CovarianceAtDate
+struct ForwardCovariance
     ito_set_::ItoSet
     from_::Real
     to_::Real
@@ -188,14 +188,14 @@ struct CovarianceAtDate
     inverse_::Union{Missing,Symmetric}
     determinant_::Union{Missing,Real}
     """
-    CovarianceAtDate(ito_set_::ItoSet, from_::Real, to_::Real;
+    ForwardCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
              calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
-    CovarianceAtDate(ito_set_::ItoSet, from::Union{Date,DateTime}, to::Union{Date,DateTime})
-    CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Real, to::Real)
-    CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Union{Date,DateTime}, to::Union{Date,DateTime})
-        These are constructors for a CovarianceAtDate struct.
+    ForwardCovariance(ito_set_::ItoSet, from::Union{Date,DateTime}, to::Union{Date,DateTime})
+    ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Real, to::Real)
+    ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Union{Date,DateTime}, to::Union{Date,DateTime})
+        These are constructors for a ForwardCovariance struct.
     """
-    function CovarianceAtDate(ito_set_::ItoSet, from_::Real, to_::Real;
+    function ForwardCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
              calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
         covariance_, covariance_labels_ = make_covariance_matrix(ito_set_, from_, to_)
         chol_ = missing
@@ -206,72 +206,86 @@ struct CovarianceAtDate
         if calculate_determinant determinant_       = det(covariance_) end
         return new(ito_set_, from_, to_, covariance_, covariance_labels_, chol_, inverse_, determinant_)
     end
-    function CovarianceAtDate(ito_set_::ItoSet, from::Union{Date,DateTime}, to::Union{Date,DateTime};
+    function ForwardCovariance(ito_set_::ItoSet, from::Union{Date,DateTime}, to::Union{Date,DateTime};
              calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
         from_ = years_from_global_base(from)
         to_   = years_from_global_base(to)
-        return CovarianceAtDate(ito_set_, from_, to_; calculate_chol = calculate_chol,
+        return ForwardCovariance(ito_set_, from_, to_; calculate_chol = calculate_chol,
                   calculate_inverse = calculate_inverse, calculate_determinant = calculate_determinant)
     end
-    function CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Real, to::Real)
-        return CovarianceAtDate(old_CovarianceAtDate.ito_set_, from, to)
+    function ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Real, to::Real; recalculate_all::Bool = true)
+        if recalculate_all
+            return ForwardCovariance(old_ForwardCovariance.ito_set_, from, to)
+        else
+            old_duration = old_ForwardCovariance.to_ - old_ForwardCovariance.from_
+            new_duration = to - from
+            covariance_  = old_ForwardCovariance.covariance_ * (new_duration/old_duration)
+            covariance_labels_ = old_ForwardCovariance.covariance_labels_
+
+            chol_ = ismissing(old_ForwardCovariance.chol_) ? missing : LowerTriangular(old_ForwardCovariance.chol_ .* sqrt((new_duration/old_duration)))
+            inverse_ = ismissing(old_ForwardCovariance.inverse_) ? missing : Symmetric(old_ForwardCovariance.inverse_ ./  ((new_duration/old_duration)))
+            determinant_ = ismissing(old_ForwardCovariance.determinant_) ? missing : old_ForwardCovariance.determinant_ *  ((new_duration/old_duration)^length(covariance_labels_))
+            return new(old_ForwardCovariance.ito_set_, from, to, covariance_, covariance_labels_, chol_, inverse_, determinant_)
+        end
     end
-    function CovarianceAtDate(old_CovarianceAtDate::CovarianceAtDate, from::Date, to::Date)
-        return CovarianceAtDate(old_CovarianceAtDate.ito_set_, from, to)
+    function ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Union{Date,DateTime}, to::Union{Date,DateTime}; recalculate_all::Bool = true)
+        from_ = years_from_global_base(from)
+        to_   = years_from_global_base(to)
+        return ForwardCovariance(old_ForwardCovariance.ito_set_, from_, to_; recalculate_all = recalculate_all)
     end
 end
 
 """
-    get_volatility(covar::CovarianceAtDate, index::Integer, on::Union{Date,DateTime})
-    get_volatility(covar::CovarianceAtDate, id::Symbol, on::Union{Date,DateTime})
+    get_volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
+    get_volatility(covar::ForwardCovariance, id::Symbol, on::Union{Date,DateTime})
 Get the volatility of an ItoIntegral on a date..
 """
-function get_volatility(covar::CovarianceAtDate, index::Integer, on::Union{Date,DateTime})
+function get_volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
     return get_volatility(covar.ito_set_, index, on)
 end
-function get_volatility(covar::CovarianceAtDate, id::Symbol, on::Union{Date,DateTime})
+function get_volatility(covar::ForwardCovariance, id::Symbol, on::Union{Date,DateTime})
     return get_volatility(covar.ito_set_, id, on)
 end
 
 """
-    get_variance(covar::CovarianceAtDate, id::Symbol)
-    get_variance(covar::CovarianceAtDate, index::Integer)
+    get_variance(covar::ForwardCovariance, id::Symbol)
+    get_variance(covar::ForwardCovariance, index::Integer)
 Get the variance of an ItoIntegral over a period.
 """
-function get_variance(covar::CovarianceAtDate, id::Symbol)
+function get_variance(covar::ForwardCovariance, id::Symbol)
         index = findall(id .== covar.covariance_labels_)[1]
         return get_variance(covar, index)
 end
-function get_variance(covar::CovarianceAtDate, index::Integer)
+function get_variance(covar::ForwardCovariance, index::Integer)
     return covar.covariance_[index,index]
 end
 
 """
-    get_covariance(covar::CovarianceAtDate, index_1::Integer, index_2::Integer)
-    get_covariance(covar::CovarianceAtDate, id1::Symbol, id2::Symbol)
+    get_covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
+    get_covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
 Get the covariance of two ItoIntegrals over a period.
 """
-function get_covariance(covar::CovarianceAtDate, index_1::Integer, index_2::Integer)
+function get_covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     return covar.covariance_[index_1,index_2]
 end
-function get_covariance(covar::CovarianceAtDate, id1::Symbol, id2::Symbol)
+function get_covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
     index_1 = findall(id1 .== covar.covariance_labels_)[1]
     index_2 = findall(id2 .== covar.covariance_labels_)[1]
     return get_covariance(covar, index_1, index_2)
 end
 
 """
-    get_correlation(covar::CovarianceAtDate, index_1::Integer, index_2::Integer)
-    get_correlation(covar::CovarianceAtDate, id1::Symbol, id2::Symbol)
+    get_correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
+    get_correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
 Get the correlation of two ItoIntegrals over a period.
 """
-function get_correlation(covar::CovarianceAtDate, index_1::Integer, index_2::Integer)
+function get_correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     covariance = get_covariance(covar, index_1, index_2)
     var1  = get_variance(covar, index_1)
     var2  = get_variance(covar, index_2)
     return covariance/sqrt(var1 * var2)
 end
-function get_correlation(covar::CovarianceAtDate, id1::Symbol, id2::Symbol)
+function get_correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
     index_1 = findall(id1 .== covar.covariance_labels_)[1]
     index_2 = findall(id2 .== covar.covariance_labels_)[1]
     return get_correlation(covar, index_1, index_2)
@@ -279,20 +293,20 @@ end
 
 ## Random draws
 """
-    get_draws(covar::CovarianceAtDate; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
-    get_draws(covar::CovarianceAtDate, num::Integer; twister::MersenneTwister = MersenneTwister(1234), antithetic_variates = false)
-get pseudorandom draws from a CovarianceAtDate struct. Other schemes (like quasirandom) can be done by inserting quasirandom
+    get_draws(covar::ForwardCovariance; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
+    get_draws(covar::ForwardCovariance, num::Integer; twister::MersenneTwister = MersenneTwister(1234), antithetic_variates = false)
+get pseudorandom draws from a ForwardCovariance struct. Other schemes (like quasirandom) can be done by inserting quasirandom
 numbers in as the uniform_draw.
 If the antithetic_variates control is set to true then every second set of draws will be antithetic to the previous.
 """
-function get_draws(covar::CovarianceAtDate; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
+function get_draws(covar::ForwardCovariance; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
     number_of_itos = length(covar.covariance_labels_)
     normal_draw = quantile.(Ref(Normal()), uniform_draw)
     scaled_draw = covar.chol_ * normal_draw
     first_set_of_draws = Dict{Symbol,Real}(covar.covariance_labels_ .=> scaled_draw)
     return first_set_of_draws
 end
-function get_draws(covar::CovarianceAtDate, num::Integer; number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)), antithetic_variates = false)
+function get_draws(covar::ForwardCovariance, num::Integer; number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)), antithetic_variates = false)
     if antithetic_variates
         half_num = convert(Int, round(num/2))
         array_of_dicts = Array{Dict{Symbol,Real}}(undef, half_num*2)
@@ -317,18 +331,18 @@ end
 
 # This is most likely useful for bug hunting.
 """
-    get_zero_draws(covar::CovarianceAtDate)
+    get_zero_draws(covar::ForwardCovariance)
 get a draw of zero for all ito_integrals. May be handy for bug hunting.
 """
-function get_zero_draws(covar::CovarianceAtDate)
+function get_zero_draws(covar::ForwardCovariance)
     return Dict{Symbol,Real}(covar.covariance_labels_ .=> 0.0)
 end
 # This is most likely useful for bug hunting.
 """
-    get_zero_draws(covar::CovarianceAtDate, num::Integer)
+    get_zero_draws(covar::ForwardCovariance, num::Integer)
 get an array of zero draws for all ito_integrals. May be handy for bug hunting.
 """
-function get_zero_draws(covar::CovarianceAtDate, num::Integer)
+function get_zero_draws(covar::ForwardCovariance, num::Integer)
     array_of_dicts = Array{Dict{Symbol,Real}}(undef, num)
     for i in 1:num
         array_of_dicts[i] = get_zero_draws(covar)
@@ -337,10 +351,10 @@ function get_zero_draws(covar::CovarianceAtDate, num::Integer)
 end
 
 """
-    pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
+    pdf(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
 get the value of the pdf at some coordinates.
 """
-function pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
+function pdf(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma^{-1} (x - \mu))
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)
@@ -350,10 +364,10 @@ function pdf(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
 end
 
 """
-    log_likelihood(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
+    log_likelihood(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
 get the log likelihood at some coordinates.
 """
-function log_likelihood(covar::CovarianceAtDate, coordinates::Dict{Symbol,Real})
+function log_likelihood(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma(x - \mu))
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)

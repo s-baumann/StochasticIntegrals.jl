@@ -36,10 +36,10 @@ function _randoms(chol, num::Integer, Seed::Integer)
 end
 
 """
-    get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Real, data::Array{T,2}; tuning_parameter::Real = 1.0)
+    get_confidence_hypercube(covar::ForwardCovariance, confidence_level::Real, data::Array{T,2}; tuning_parameter::Real = 1.0)
 This returns the endpoints of a hypercube that contains confidence_level% of the dataset.
 """
-function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Real, data::Array{T,2}; tuning_parameter::Real = 1.0, ConvergenceMetricThreshold::Real = 1e-10) where T<:Real
+function get_confidence_hypercube(covar::ForwardCovariance, confidence_level::Real, data::Array{T,2}; tuning_parameter::Real = 1.0, ConvergenceMetricThreshold::Real = 1e-10) where T<:Real
     # Using a univariate guess as we can get these pretty cheaply.
     guess = quantile(Normal(), 0.5*(1+confidence_level))
     # This runs once so that any error is explictly thrown and is traceable rather than being obscured by FixedPoint's try-catch
@@ -50,7 +50,7 @@ function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Rea
     return Dict{Symbol,Tuple{T,T}}(covar.covariance_labels_ .=> cutoffs)
 end
 
-function get_confidence_hypercube(covar::CovarianceAtDate, confidence_level::Real, num::Integer; tuning_parameter::Real = 1.0,  ConvergenceMetricThreshold::Real = 1e-10)
+function get_confidence_hypercube(covar::ForwardCovariance, confidence_level::Real, num::Integer; tuning_parameter::Real = 1.0,  ConvergenceMetricThreshold::Real = 1e-10)
     dims = length(covar.covariance_labels_)
     data = _randoms(covar.chol_, num, 1)
     return get_confidence_hypercube(covar, confidence_level, data; tuning_parameter = tuning_parameter, ConvergenceMetricThreshold = ConvergenceMetricThreshold)

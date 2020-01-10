@@ -28,7 +28,7 @@ CS_ito    = ItoIntegral(:CS, CS_vol)
 ito_integrals = Dict([:CS, :BARC] .=> [CS_ito, BARC_ito])
 
 ito_set_ = ItoSet(brownian_corr_matrix, brownian_ids, ito_integrals)
-covar = CovarianceAtDate(ito_set_, years_from_global_base(today), years_from_global_base(tommorow))
+covar = ForwardCovariance(ito_set_, years_from_global_base(today), years_from_global_base(tommorow))
 
 T = Float64
 conditioning_draws = Dict{Symbol,T}(:CS => 0.02)

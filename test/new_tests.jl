@@ -46,11 +46,11 @@ abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - evaluate(USD_hw_a_cur
 
 
 
-covar = CovarianceAtDate(ito_set_, years_from_global_base(today), years_from_global_base(date_2020))
+covar = ForwardCovariance(ito_set_, years_from_global_base(today), years_from_global_base(date_2020))
 abs(covar.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(date_2020) - years_from_global_base(today))) < tol
 abs(covar.covariance_[1,1] - get_variance(USD_IR_a_ito, years_from_global_base(today), years_from_global_base(date_2020))) < tol
 
-cov_date = CovarianceAtDate(ito_set_, today, later_date)
+cov_date = ForwardCovariance(ito_set_, today, later_date)
 abs(cov_date.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(later_date) - years_from_global_base(today))) < tol
 
 abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - get_volatility(cov_date,  :USD_IR_a, Date(2020,1,1)) ) < tol
@@ -70,7 +70,7 @@ end
 abs_value_of_dict_differences(get_draws(cov_date), get_draws(cov_date)) > tol
 abs_value_of_dict_differences(get_draws(cov_date;  uniform_draw = rand(5)), get_draws(cov_date; uniform_draw =  rand(5))) > tol
 
-function test_random_points_pdf(covar::CovarianceAtDate)
+function test_random_points_pdf(covar::ForwardCovariance)
     draws = get_draws(covar)
     pdf_val = pdf(covar, draws)
     return (pdf_val >= 0.0)
@@ -107,7 +107,7 @@ abs(cov(sobol_samples[5], sobol_samples[1]) - get_covariance(cov_date, :GBP_FX, 
 
 
 #  Test likelihood
-function test_random_points_loglikelihood(covar::CovarianceAtDate)
+function test_random_points_loglikelihood(covar::ForwardCovariance)
     draws = get_draws(covar)
     log_likelihood_val = log_likelihood(covar, draws)
     return log_likelihood_val > -Inf

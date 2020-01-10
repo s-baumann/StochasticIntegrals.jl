@@ -50,11 +50,11 @@ ito_set = ItoSet(brownian_correlation_matrix, brownian_ids, ito_integrals)
 ```
 In this format we can access the volatility of any of the Ito integrals at any point. We would usually be more
 interested in the statistical properties of the Ito integrals at a point forward in time. This can be done by
-generating a CovarianceAtDate object. We must first specify the start and end limits on each integral. Below we
+generating a ForwardCovariance object. We must first specify the start and end limits on each integral. Below we
 look at the integrals  between 0.0 and 2.0. More generally time can be specified in Dates format. See testing
 files for more examples.
 ```
-covar = CovarianceAtDate(ito_set, 0.0, 2.0)
+covar = ForwardCovariance(ito_set, 0.0, 2.0)
 ```
 All of the hard work is done inside the above constructor. In particular a covariance matrix is generated as
 well as its inverse, Cholesky decomposition and determinant. These can be accessed directly in the normal way.
