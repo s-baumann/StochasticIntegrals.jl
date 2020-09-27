@@ -3,7 +3,7 @@
 # To Array
 """
     to_array(draws::Array{Dict{Symbol,T},1}; labels::Array{Symbol,1}  = collect(keys(draws[1]))) where T<:Real
-    to_array(dd::DataFrame; labels::Array{Symbol,1} = names(dd))
+    to_array(dd::DataFrame; labels::Array{Symbol,1} =  Symbol.(names(dd)))
 Convert draws or a dataframe to an array and a vector of column labels.
 """
 function to_array(draws::Array{Dict{Symbol,T},1}; labels::Array{Symbol,1}  = collect(keys(draws[1]))) where T<:Real
@@ -15,7 +15,7 @@ function to_array(draws::Array{Dict{Symbol,T},1}; labels::Array{Symbol,1}  = col
     end
     return X, labels
 end
-function to_array(dd::DataFrame; labels::Array{Symbol,1} = names(dd), float_type = typeof(AbstractFloat(1.0)))
+function to_array(dd::DataFrame; labels::Array{Symbol,1} =  Symbol.(names(dd)), float_type = typeof(AbstractFloat(1.0)))
     X = Array{float_type,2}(undef,size(dd)[1], length(labels))
     for c in 1:length(labels)
         X[:,c] = dd[!,labels[c]]
@@ -26,7 +26,7 @@ end
 # To Draws
 """
     to_draws(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X)[2]))
-    to_draws(dd::DataFrame; labels::Array{Symbol,1} = names(dd))
+    to_draws(dd::DataFrame; labels::Array{Symbol,1} =  Symbol.(names(dd)))
 Convert array or dataframe to a vector of dicts containing draws.
 """
 function to_draws(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X)[2])) where T<:Real
@@ -40,7 +40,7 @@ function to_draws(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X
     end
     return draws
 end
-function to_draws(dd::DataFrame; labels::Array{Symbol,1} = names(dd), float_type = typeof(AbstractFloat(1.0)))
+function to_draws(dd::DataFrame; labels::Array{Symbol,1} = Symbol.(names(dd)), float_type = typeof(AbstractFloat(1.0)))
     draws = Array{Dict{Symbol,float_type},1}()
     for i in 1:size(dd)[1]
         draw = Dict{Symbol,float_type}()

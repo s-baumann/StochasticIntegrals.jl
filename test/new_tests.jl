@@ -38,28 +38,28 @@ ito_integrals = Dict([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB, :GBP_FX] .=>
 
 ito_set_ = ItoSet(brownian_corr_matrix, brownian_ids, ito_integrals)
 # The next ito integral should have constant vol
-abs(get_volatility(ito_set_,  :GBP_FX, Date(2020,1,1)) - GBP_FX_Vol) < tol
-abs(get_volatility(ito_set_,  :GBP_FX, Date(2022,1,1)) - GBP_FX_Vol) < tol
+abs(volatility(ito_set_,  :GBP_FX, Date(2020,1,1)) - GBP_FX_Vol) < tol
+abs(volatility(ito_set_,  :GBP_FX, Date(2022,1,1)) - GBP_FX_Vol) < tol
 # The next ito integral has changing vol
-abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - get_volatility(ito_set_,  :USD_IR_a, Date(2022,1,1)) ) > 0.005
-abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - evaluate(USD_hw_a_curve, Date(2020,1,1)) ) < tol
+abs(volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - volatility(ito_set_,  :USD_IR_a, Date(2022,1,1)) ) > 0.005
+abs(volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - evaluate(USD_hw_a_curve, Date(2020,1,1)) ) < tol
 
 
 
 covar = ForwardCovariance(ito_set_, years_from_global_base(today), years_from_global_base(date_2020))
 abs(covar.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(date_2020) - years_from_global_base(today))) < tol
-abs(covar.covariance_[1,1] - get_variance(USD_IR_a_ito, years_from_global_base(today), years_from_global_base(date_2020))) < tol
+abs(covar.covariance_[1,1] - variance(USD_IR_a_ito, years_from_global_base(today), years_from_global_base(date_2020))) < tol
 
 cov_date = ForwardCovariance(ito_set_, today, later_date)
 abs(cov_date.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(later_date) - years_from_global_base(today))) < tol
 
-abs(get_volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - get_volatility(cov_date,  :USD_IR_a, Date(2020,1,1)) ) < tol
-abs(cov_date.covariance_[1,3] - get_covariance(cov_date, :USD_IR_a, :GBP_IR_a)) < tol
-abs(get_variance(cov_date, :USD_IR_a) - get_covariance(cov_date, :USD_IR_a, :USD_IR_a)) < tol
+abs(volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - volatility(cov_date,  :USD_IR_a, Date(2020,1,1)) ) < tol
+abs(cov_date.covariance_[1,3] - covariance(cov_date, :USD_IR_a, :GBP_IR_a)) < tol
+abs(variance(cov_date, :USD_IR_a) - covariance(cov_date, :USD_IR_a, :USD_IR_a)) < tol
 
 # Test correlation.
-abs(get_correlation(cov_date, :USD_IR_a, :GBP_IR_a) - (get_covariance(cov_date, :USD_IR_a, :GBP_IR_a)/sqrt(get_variance(cov_date, :USD_IR_a) * get_variance(cov_date, :GBP_IR_a)))) < tol
-abs(get_correlation(cov_date, :GBP_IR_aB, :GBP_IR_a) - (get_covariance(cov_date, :GBP_IR_aB, :GBP_IR_a)/sqrt(get_variance(cov_date, :GBP_IR_aB) * get_variance(cov_date, :GBP_IR_a)))) < tol
+abs(correlation(cov_date, :USD_IR_a, :GBP_IR_a) - (covariance(cov_date, :USD_IR_a, :GBP_IR_a)/sqrt(variance(cov_date, :USD_IR_a) * variance(cov_date, :GBP_IR_a)))) < tol
+abs(correlation(cov_date, :GBP_IR_aB, :GBP_IR_a) - (covariance(cov_date, :GBP_IR_aB, :GBP_IR_a)/sqrt(variance(cov_date, :GBP_IR_aB) * variance(cov_date, :GBP_IR_a)))) < tol
 
 Random.seed!(1234)
 ## Test random draws
@@ -91,19 +91,19 @@ sobols = get_draws(cov_date, 100000; number_generator = s)
 sobol_samples = SplitDicts(sobols)
 zero_draws = get_zero_draws(cov_date,2)
 
-abs(var(normal_samples[1]) - get_variance(cov_date, :USD_IR_a))  < 0.001
-abs(var(normal_samples[2]) - get_variance(cov_date, :USD_IR_aB)) < 0.11
-abs(var(normal_samples[3]) - get_variance(cov_date, :GBP_IR_a))  < 1e-06
-abs(var(normal_samples[4]) - get_variance(cov_date, :GBP_IR_aB)) < 1e-04
-abs(var(normal_samples[5]) - get_variance(cov_date, :GBP_FX))    < 0.02
+abs(var(normal_samples[1]) - variance(cov_date, :USD_IR_a))  < 0.001
+abs(var(normal_samples[2]) - variance(cov_date, :USD_IR_aB)) < 0.11
+abs(var(normal_samples[3]) - variance(cov_date, :GBP_IR_a))  < 1e-06
+abs(var(normal_samples[4]) - variance(cov_date, :GBP_IR_aB)) < 1e-04
+abs(var(normal_samples[5]) - variance(cov_date, :GBP_FX))    < 0.02
 
-abs(var(sobol_samples[1])  - get_variance(cov_date, :USD_IR_a))  < 1e-04
-abs(var(sobol_samples[2])  - get_variance(cov_date, :USD_IR_aB)) < 0.001
-abs(var(sobol_samples[3])  - get_variance(cov_date, :GBP_IR_a))  < 1e-05
-abs(var(sobol_samples[4])  - get_variance(cov_date, :GBP_IR_aB)) < 1e-05
-abs(var(sobol_samples[5])  - get_variance(cov_date, :GBP_FX))    < 0.02
+abs(var(sobol_samples[1])  - variance(cov_date, :USD_IR_a))  < 1e-04
+abs(var(sobol_samples[2])  - variance(cov_date, :USD_IR_aB)) < 0.001
+abs(var(sobol_samples[3])  - variance(cov_date, :GBP_IR_a))  < 1e-05
+abs(var(sobol_samples[4])  - variance(cov_date, :GBP_IR_aB)) < 1e-05
+abs(var(sobol_samples[5])  - variance(cov_date, :GBP_FX))    < 0.02
 
-abs(cov(sobol_samples[5], sobol_samples[1]) - get_covariance(cov_date, :GBP_FX, :USD_IR_a)) < 0.001
+abs(cov(sobol_samples[5], sobol_samples[1]) - covariance(cov_date, :GBP_FX, :USD_IR_a)) < 0.001
 
 
 #  Test likelihood
@@ -127,7 +127,7 @@ dd = to_dataframe(draws; labels = [:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB]
 size(dd) == (7,4)
 dd2 = to_dataframe(draws)
 size(dd2) == (7,5)
-Set(names(dd2)) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB, :GBP_FX])
+Set(Symbol.(names(dd2))) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB, :GBP_FX])
 
 # Testing data conversions - From array
 draws = to_draws(arr; labels = labs)
@@ -138,10 +138,10 @@ length(draws) == 7
 Set(collect(keys(draws[1]))) == Set([:x1, :x2, :x3, :x4])
 dd = to_dataframe(arr; labels = labs)
 size(dd)[1] == 7
-Set(collect(names(dd))) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
+Set(Symbol.(collect(names(dd)))) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 dd2 = to_dataframe(arr)
 size(dd2)[1] == 7
-Set(names(dd2)) == Set([:x1, :x2, :x3, :x4])
+Set(Symbol.(names(dd2)))== Set([:x1, :x2, :x3, :x4])
 
 # Testing data conversions - From dataframe
 draws = to_draws(dd; labels = labs)
@@ -155,7 +155,7 @@ size(X) == (7, 4)
 Set(labs) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 X, labs = to_array(dd)
 size(X) == (7, 4)
-Set(labs) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
+Set(Symbol.(labs)) == Set([:USD_IR_a, :USD_IR_aB, :GBP_IR_a, :GBP_IR_aB])
 
 # Testing hypercube generation
 confidence_level = 0.95
@@ -222,7 +222,7 @@ sum(normal_samples_antithetic[4]) < tol
 sum(normal_samples_antithetic[5]) < tol
 
 # Now we will do a test for finding the expectation of a lognormal.
-theoretical_expectation = exp(get_variance(cov_date, :USD_IR_a)/2)
+theoretical_expectation = exp(variance(cov_date, :USD_IR_a)/2)
 log_normal_samples = exp.(normal_samples[1])
 log_normal_expectation_estimate = mean(log_normal_samples)
 log_normal_antithetic_samples = exp.(normal_samples_antithetic[1])

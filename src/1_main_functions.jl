@@ -21,62 +21,65 @@ struct ItoIntegral
 end
 
 """
-    get_variance(ito::ItoIntegral, from::Real, to::Real)
-    get_variance(ito::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime})
+    variance(ito::ItoIntegral, from::Real, to::Real)
+    variance(ito::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime})
 Get the variance of an ItoIntegral from one point of time to another.
 """
-function get_variance(ito::ItoIntegral, from::Real, to::Real)
+function variance(ito::ItoIntegral, from::Real, to::Real)
     if from + eps() > to
         return 0.0;
     end
     return evaluate_integral(ito.f_^2, from, to)
 end
-function get_variance(ito::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime})
+function variance(ito::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime})
     from_fl = years_between(from, base)
     to_fl   = years_between(to, base)
-    return get_variance(ito, from_fl, to_fl)
+    return variance(ito, from_fl, to_fl)
 end
 
 """
-    get_volatility(ito::ItoIntegral, on::Union{Date,DateTime})
+    volatility(ito::ItoIntegral, on::Union{Date,DateTime})
 Get the volatility of an ItoIntegral on a certain date.
 """
-function get_volatility(ito::ItoIntegral, on::Union{Date,DateTime})
-    return evaluate(ito.f_, on)
+function volatility(ito::ItoIntegral, on::Union{Date,DateTime})
+    return ito.f_(on)
+end
+function volatility(ito::ItoIntegral, on::Real)
+    return ito.f_(on)
 end
 
 """
-    get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
-    get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
+    covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
+    covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
 Get the covariance of two ItoIntegrals over a certain period given the underlying Brownian processes have a correlation of gaussian_correlation.
 """
-function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
+function covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
     if from + eps() >= to
         return 0.0;
     end
     return gaussian_correlation * evaluate_integral(ito1.f_ * ito2.f_, from, to)
 end
-function get_covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
+function covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
     from_fl = years_between(from, base)
     to_fl   = years_between(to, base)
-    return get_covariance(ito1, ito2, from_fl, to_fl, gaussian_correlation)
+    return covariance(ito1, ito2, from_fl, to_fl, gaussian_correlation)
 end
 
 """
-    get_correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
-    get_correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
+    correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
+    correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
 Get the correlation of two ItoIntegrals over a certain period given the underlying Brownian processes have a correlation of gaussian_correlation.
 """
-function get_correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
+function correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
     cov =  covar(ito1,ito2, base, from, to, gaussian_correlation)
     var1 = var(ito1, from, to)
     var2 = var(ito2, from, to)
     return gaussian_correlation * (cov / (var1 * var2))
 end
-function get_correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
+function correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
     from_fl = years_between(from, base)
     to_fl   = years_between(to, base)
-    return get_correlation(ito1, ito2, from_fl, to_fl, gaussian_correlation)
+    return correlation(ito1, ito2, from_fl, to_fl, gaussian_correlation)
 end
 
 """
@@ -116,31 +119,31 @@ struct ItoSet{T<:Real}
 end
 
 """
-    get_correlation(ito::ItoSet, index1::Integer, index2::Integer)
-    get_correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
+    correlation(ito::ItoSet, index1::Integer, index2::Integer)
+    correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
 Get correlation between brownian motions in an ItoSet.
 """
-function get_correlation(ito::ItoSet, index1::Integer, index2::Integer)
+function correlation(ito::ItoSet, index1::Integer, index2::Integer)
     return ito.brownian_correlation_matrix_[index1, index2]
 end
-function get_correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
+function correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
     index1 = findall(brownian_id1 .== ito.brownian_ids_)[1]
     index2 = findall(brownian_id2 .== ito.brownian_ids_)[1]
-    return get_correlation(ito, index1, index2)
+    return correlation(ito, index1, index2)
 end
 
 """
-    get_volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
-    get_volatility(ito::ItoSet, ito_integral_id::Symbol, on::Union{Date,DateTime})
+    volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
+    volatility(ito::ItoSet, ito_integral_id::Symbol, on::Union{Date,DateTime})
 Get volatility of an ito_integral on a date.
 """
-function get_volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
-    return get_volatility(ito.ito_integrals_[index], on)
+function volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
+    return volatility(ito.ito_integrals_[index], on)
 end
 
-function get_volatility(ito::ItoSet, ito_integral_id::Symbol, on::Union{Date,DateTime})
+function volatility(ito::ItoSet, ito_integral_id::Symbol, on::Union{Date,DateTime})
     ito_integral = ito.ito_integrals_[ito_integral_id]
-    return get_volatility(ito_integral, on)
+    return volatility(ito_integral, on)
 end
 
 """
@@ -158,8 +161,8 @@ function make_covariance_matrix(ito_set_::ItoSet{T}, from::Real, to::Real) where
             #    cov[r,c] = 0.0 # Since at the end we use the Symmetric thing, this is discarded so we don't bother computing it.
             #end
             cito = ito_set_.ito_integrals_[ito_ids[c]]
-            cr_correlation = get_correlation(ito_set_, rito.brownian_id_, cito.brownian_id_)
-            cov[r,c] = get_covariance(rito, cito, from, to, cr_correlation)
+            cr_correlation = correlation(ito_set_, rito.brownian_id_, cito.brownian_id_)
+            cov[r,c] = covariance(rito, cito, from, to, cr_correlation)
         end
     end
     return Symmetric(cov), ito_ids
@@ -236,59 +239,59 @@ struct ForwardCovariance
 end
 
 """
-    get_volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
-    get_volatility(covar::ForwardCovariance, id::Symbol, on::Union{Date,DateTime})
+    volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
+    volatility(covar::ForwardCovariance, id::Symbol, on::Union{Date,DateTime})
 Get the volatility of an ItoIntegral on a date..
 """
-function get_volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
-    return get_volatility(covar.ito_set_, index, on)
+function volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
+    return volatility(covar.ito_set_, index, on)
 end
-function get_volatility(covar::ForwardCovariance, id::Symbol, on::Union{Date,DateTime})
-    return get_volatility(covar.ito_set_, id, on)
+function volatility(covar::ForwardCovariance, id::Symbol, on::Union{Date,DateTime})
+    return volatility(covar.ito_set_, id, on)
 end
 
 """
-    get_variance(covar::ForwardCovariance, id::Symbol)
-    get_variance(covar::ForwardCovariance, index::Integer)
+    variance(covar::ForwardCovariance, id::Symbol)
+    variance(covar::ForwardCovariance, index::Integer)
 Get the variance of an ItoIntegral over a period.
 """
-function get_variance(covar::ForwardCovariance, id::Symbol)
+function variance(covar::ForwardCovariance, id::Symbol)
         index = findall(id .== covar.covariance_labels_)[1]
-        return get_variance(covar, index)
+        return variance(covar, index)
 end
-function get_variance(covar::ForwardCovariance, index::Integer)
+function variance(covar::ForwardCovariance, index::Integer)
     return covar.covariance_[index,index]
 end
 
 """
-    get_covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
-    get_covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
+    covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
+    covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
 Get the covariance of two ItoIntegrals over a period.
 """
-function get_covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
+function covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     return covar.covariance_[index_1,index_2]
 end
-function get_covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
+function covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
     index_1 = findall(id1 .== covar.covariance_labels_)[1]
     index_2 = findall(id2 .== covar.covariance_labels_)[1]
-    return get_covariance(covar, index_1, index_2)
+    return covariance(covar, index_1, index_2)
 end
 
 """
-    get_correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
-    get_correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
+    correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
+    correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
 Get the correlation of two ItoIntegrals over a period.
 """
-function get_correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
-    covariance = get_covariance(covar, index_1, index_2)
-    var1  = get_variance(covar, index_1)
-    var2  = get_variance(covar, index_2)
-    return covariance/sqrt(var1 * var2)
+function correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
+    cova = covariance(covar, index_1, index_2)
+    var1  = variance(covar, index_1)
+    var2  = variance(covar, index_2)
+    return cova/sqrt(var1 * var2)
 end
-function get_correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
+function correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
     index_1 = findall(id1 .== covar.covariance_labels_)[1]
     index_2 = findall(id2 .== covar.covariance_labels_)[1]
-    return get_correlation(covar, index_1, index_2)
+    return correlation(covar, index_1, index_2)
 end
 
 ## Random draws
