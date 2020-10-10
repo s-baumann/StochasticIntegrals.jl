@@ -4,7 +4,7 @@ using DataFrames
 using DataStructures: OrderedDict
 using Dates
 using Distributions
-using LinearAlgebra: Symmetric, cholesky, inv, det, LowerTriangular, diag
+using LinearAlgebra: Hermitian, cholesky, inv, det, LowerTriangular, diag
 using UnivariateFunctions
 using Random
 using Sobol: SobolSeq, next!

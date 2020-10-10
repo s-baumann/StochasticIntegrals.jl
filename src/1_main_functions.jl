@@ -102,10 +102,10 @@ Creates an ItoSet. This contains :
 Determine which Brownian processes are used in an array of ItoIntegrals.
 """
 struct ItoSet{T<:Real}
-    brownian_correlation_matrix_::Symmetric{T}
+    brownian_correlation_matrix_::Hermitian{T}
     brownian_ids_::Array{Symbol,1}
     ito_integrals_::Dict{Symbol,ItoIntegral}
-    function ItoSet(brownian_corr_matrix::Symmetric{T}, brownian_ids::Array{Symbol,1}, ito_integrals::Dict{Symbol,ItoIntegral}) where T<:Real
+    function ItoSet(brownian_corr_matrix::Hermitian{T}, brownian_ids::Array{Symbol,1}, ito_integrals::Dict{Symbol,ItoIntegral}) where T<:Real
         if (size(brownian_ids)[1] != size(brownian_corr_matrix)[1])
             error("The shape of brownian_ids_ must match the number of rows/columns of brownian_correlation_matrix_")
         end
@@ -113,7 +113,7 @@ struct ItoSet{T<:Real}
           if length(setdiff(all_brownians_in_use, brownian_ids)) > 0
               error(string("In creating an ItoSet there are some brownian motions referenced by ito integrals for which there are no corresponding entries in the correlation matrix for brownian motions. Thus an ItoSet cannot be built. These include ", setdiff(all_brownians_in_use, brownian_ids)))
           end
-          brownian_corr_matrix_subset      = Symmetric(brownian_corr_matrix[used_brownian_indices,used_brownian_indices])
+          brownian_corr_matrix_subset      = Hermitian(brownian_corr_matrix[used_brownian_indices,used_brownian_indices])
        return new{T}(brownian_corr_matrix_subset, brown_ids, ito_integrals)
     end
 end
@@ -158,14 +158,14 @@ function make_covariance_matrix(ito_set_::ItoSet{T}, from::Real, to::Real) where
         rito = ito_set_.ito_integrals_[ito_ids[r]]
         for c in r:number_of_itos
             #if c < r
-            #    cov[r,c] = 0.0 # Since at the end we use the Symmetric thing, this is discarded so we don't bother computing it.
+            #    cov[r,c] = 0.0 # Since at the end we use the Hermitian thing, this is discarded so we don't bother computing it.
             #end
             cito = ito_set_.ito_integrals_[ito_ids[c]]
             cr_correlation = correlation(ito_set_, rito.brownian_id_, cito.brownian_id_)
             cov[r,c] = covariance(rito, cito, from, to, cr_correlation)
         end
     end
-    return Symmetric(cov), ito_ids
+    return Hermitian(cov), ito_ids
 end
 
 """
@@ -185,10 +185,10 @@ struct ForwardCovariance
     ito_set_::ItoSet
     from_::Real
     to_::Real
-    covariance_::Symmetric
+    covariance_::Hermitian
     covariance_labels_::Array{Symbol,1}
     chol_::Union{Missing,LowerTriangular}
-    inverse_::Union{Missing,Symmetric}
+    inverse_::Union{Missing,Hermitian}
     determinant_::Union{Missing,Real}
     """
     ForwardCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
@@ -205,7 +205,7 @@ struct ForwardCovariance
         inverse_ = missing
         determinant_ = missing
         if calculate_chol chol_ = LowerTriangular(cholesky(covariance_).L) end
-        if calculate_inverse inverse_           = Symmetric(inv(covariance_)) end
+        if calculate_inverse inverse_           = Hermitian(inv(covariance_)) end
         if calculate_determinant determinant_       = det(covariance_) end
         return new(ito_set_, from_, to_, covariance_, covariance_labels_, chol_, inverse_, determinant_)
     end
@@ -226,7 +226,7 @@ struct ForwardCovariance
             covariance_labels_ = old_ForwardCovariance.covariance_labels_
 
             chol_ = ismissing(old_ForwardCovariance.chol_) ? missing : LowerTriangular(old_ForwardCovariance.chol_ .* sqrt((new_duration/old_duration)))
-            inverse_ = ismissing(old_ForwardCovariance.inverse_) ? missing : Symmetric(old_ForwardCovariance.inverse_ ./  ((new_duration/old_duration)))
+            inverse_ = ismissing(old_ForwardCovariance.inverse_) ? missing : Hermitian(old_ForwardCovariance.inverse_ ./  ((new_duration/old_duration)))
             determinant_ = ismissing(old_ForwardCovariance.determinant_) ? missing : old_ForwardCovariance.determinant_ *  ((new_duration/old_duration)^length(covariance_labels_))
             return new(old_ForwardCovariance.ito_set_, from, to, covariance_, covariance_labels_, chol_, inverse_, determinant_)
         end

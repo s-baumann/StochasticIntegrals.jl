@@ -24,7 +24,7 @@ USD_hw_aB_curve = USD_hw_a_curve * (1/USD_mean_reversion) * (1 - PE_Function(1.0
 GBP_hw_a_curve = PE_Function(GBP_vol, GBP_mean_reversion, today,0)
 GBP_hw_aB_curve = GBP_hw_a_curve * (1/GBP_mean_reversion) * (1 - PE_Function(1.0, -GBP_mean_reversion, today,0))
 
-brownian_corr_matrix = Symmetric([1.0 0.75 0.5 0.0;
+brownian_corr_matrix = Hermitian([1.0 0.75 0.5 0.0;
                                   0.0 1.0 0.5 0.25;
                                   0.0 0.0 1.0 0.25;
                                   0.0 0.0 0.0 1.0])

@@ -20,7 +20,7 @@ tommorow = Date(2016,12,2)
 Barclays_vol = PE_Function(0.1, 0.0, 0.0, 0)
 CS_vol       = PE_Function(0.2, 0.0, 0.0, 0)
 
-brownian_corr_matrix = Symmetric([1.0 0.75;
+brownian_corr_matrix = Hermitian([1.0 0.75;
                                   0.75 1.0])
 brownian_ids = [ :CS, :BARC]
 BARC_ito    = ItoIntegral(:BARC, Barclays_vol)

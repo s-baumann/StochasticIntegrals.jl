@@ -31,7 +31,7 @@ Brownian motions. In this case they will identify that the first row/column of t
 matrix is for the :Z process and the second is for the :W process.
 ```
 using LinearAlgebra
-brownian_correlation_matrix = Symmetric(diagm(0 => ones(2)))
+brownian_correlation_matrix = Hermitian(diagm(0 => ones(2)))
 brownian_ids = [:Z, :W]
 ```
 Now we package the integrands of our stochastic integrals together with their corresponding
