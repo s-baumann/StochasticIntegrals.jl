@@ -1,7 +1,7 @@
 # StochasticIntegrals
 
 This generates covariance matrices and Cholesky decompositions for a set of stochastic integrals.
-At the moment it only supports Ito integrals. Users specify the [MultivariateFunction](https://github.com/s-baumann/MultivariateFunctions.jl) that is the integrand of the Ito integral and a covariance matrix will be made of all such Ito integrals.
+At the moment it only supports Ito integrals. Users specify the [UnivariateFunction](https://github.com/s-baumann/UnivariateFunctions.jl) that is the integrand of the Ito integral and a covariance matrix will be made of all such Ito integrals.
 
 There are a large number of convenience functions. This includes finding the variance and instantaneous volatility of an ito integral; for extracting the terminal correlation & covariance of a pair of stochastic integrals over a period of time; for generation of random draws from the set of Ito integrals (either pseudorandom or quasirandom). Given a draw of stochastic integrals, it is also possible to find the density of the multivariate normal distribution at this point. See the testing files for code examples.
 
@@ -17,10 +17,10 @@ $ \int e^{5 - t} dW $
 
 Where Z and W are Brownian Motions.
 
-We first write the integrands as multivariate functions:
+We first write the integrands as univariate functions:
 ```
 using StochasticIntegrals
-using MultivariateFunctions
+using UnivariateFunctions
 A_integrand = PE_Function(1.0,0.0,0.0,2)
 B_integrand = PE_Function(5.0,0.0,0.0,1)
 C_integrand = PE_Function(1.0,-1.0,5.0,0)
