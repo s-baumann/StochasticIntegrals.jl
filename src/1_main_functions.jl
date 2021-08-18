@@ -31,7 +31,8 @@ function variance(ito::ItoIntegral, from::Real, to::Real)
     end
     return evaluate_integral(ito.f_^2, from, to)
 end
-function variance(ito::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime})
+function variance(ito::ItoIntegral, base::Union{Date,DateTime},
+                           from::Union{Date,DateTime}, to::Union{Date,DateTime})
     from_fl = years_between(from, base)
     to_fl   = years_between(to, base)
     return variance(ito, from_fl, to_fl)
@@ -105,16 +106,17 @@ struct ItoSet{T<:Real}
     brownian_correlation_matrix_::Hermitian{T}
     brownian_ids_::Array{Symbol,1}
     ito_integrals_::Dict{Symbol,ItoIntegral}
-    function ItoSet(brownian_corr_matrix::Hermitian{T}, brownian_ids::Array{Symbol,1}, ito_integrals::Dict{Symbol,ItoIntegral}) where T<:Real
-        if (size(brownian_ids)[1] != size(brownian_corr_matrix)[1])
+    function ItoSet(brownian_corr_matrix::Hermitian{T}, brownian_ids::Array{Symbol,1},
+                    ito_integrals::Dict{Symbol,ItoIntegral}) where T<:Real
+        if size(brownian_ids)[1] != size(brownian_corr_matrix)[1]
             error("The shape of brownian_ids_ must match the number of rows/columns of brownian_correlation_matrix_")
         end
-          all_brownians_in_use, used_brownian_indices, brown_ids = brownians_in_use(ito_integrals, brownian_ids)
-          if length(setdiff(all_brownians_in_use, brownian_ids)) > 0
-              error(string("In creating an ItoSet there are some brownian motions referenced by ito integrals for which there are no corresponding entries in the correlation matrix for brownian motions. Thus an ItoSet cannot be built. These include ", setdiff(all_brownians_in_use, brownian_ids)))
-          end
-          brownian_corr_matrix_subset      = Hermitian(brownian_corr_matrix[used_brownian_indices,used_brownian_indices])
-       return new{T}(brownian_corr_matrix_subset, brown_ids, ito_integrals)
+        all_brownians_in_use, used_brownian_indices, brown_ids = brownians_in_use(ito_integrals, brownian_ids)
+        if length(setdiff(all_brownians_in_use, brownian_ids)) > 0
+            error(string("In creating an ItoSet there are some brownian motions referenced by ito integrals for which there are no corresponding entries in the correlation matrix for brownian motions. Thus an ItoSet cannot be built. These include ", setdiff(all_brownians_in_use, brownian_ids)))
+        end
+        brownian_corr_matrix_subset = Hermitian(brownian_corr_matrix[used_brownian_indices,used_brownian_indices])
+        return new{T}(brownian_corr_matrix_subset, brown_ids, ito_integrals)
     end
 end
 
@@ -157,9 +159,6 @@ function make_covariance_matrix(ito_set_::ItoSet{T}, from::Real, to::Real) where
     for r in 1:number_of_itos
         rito = ito_set_.ito_integrals_[ito_ids[r]]
         for c in r:number_of_itos
-            #if c < r
-            #    cov[r,c] = 0.0 # Since at the end we use the Hermitian thing, this is discarded so we don't bother computing it.
-            #end
             cito = ito_set_.ito_integrals_[ito_ids[c]]
             cr_correlation = correlation(ito_set_, rito.brownian_id_, cito.brownian_id_)
             cov[r,c] = covariance(rito, cito, from, to, cr_correlation)
@@ -370,7 +369,7 @@ end
     log_likelihood(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
 get the log likelihood at some coordinates.
 """
-function log_likelihood(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
+function log_likelihood(covar::ForwardCovariance, coordinates::Dict{Symbol,R}) where R<:Real
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma(x - \mu))
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)
