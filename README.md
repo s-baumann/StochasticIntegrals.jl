@@ -2,7 +2,7 @@
 
 | Build | Coverage | Documentation |
 |-------|----------|---------------|
-| [![Build status](https://github.com/s-baumann/StochasticIntegrals.jl/workflows/CI/badge.svg)](https://github.com/s-baumann/StochasticIntegrals.jl/actions) | [![codecov](https://codecov.io/gh/s-baumann/StochasticIntegrals.jl/branch/main/graph/badge.svg?token=sElLVJgRel)](https://codecov.io/gh/s-baumann/StochasticIntegrals.jl) | [![docs-latest-img](https://img.shields.io/badge/docs-latest-blue.svg)](https://s-baumann.github.io/StochasticIntegrals.jl/dev/index.html) |
+| [![Build status](https://github.com/s-baumann/StochasticIntegrals.jl/workflows/CI/badge.svg)](https://github.com/s-baumann/StochasticIntegrals.jl/actions) | [![codecov](https://codecov.io/gh/s-baumann/StochasticIntegrals.jl/branch/master/graph/badge.svg?token=al5s5iJTeL)](https://codecov.io/gh/s-baumann/StochasticIntegrals.jl) | [![docs-latest-img](https://img.shields.io/badge/docs-latest-blue.svg)](https://s-baumann.github.io/StochasticIntegrals.jl/dev/index.html) |
 
 This generates covariance matrices and Cholesky decompositions for a set of stochastic integrals.
 At the moment it only supports Ito integrals. Users specify the [UnivariateFunction](https://github.com/s-baumann/UnivariateFunctions.jl) that is the integrand of the Ito integral and a covariance matrix will be made of all such Ito integrals.
