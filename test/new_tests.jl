@@ -49,6 +49,8 @@ abs(volatility(ito_set_,  :USD_IR_a, Date(2020,1,1)) - evaluate(USD_hw_a_curve, 
 covar = ForwardCovariance(ito_set_, years_from_global_base(today), years_from_global_base(date_2020))
 abs(covar.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(date_2020) - years_from_global_base(today))) < tol
 abs(covar.covariance_[1,1] - variance(USD_IR_a_ito, years_from_global_base(today), years_from_global_base(date_2020))) < tol
+variance(USD_IR_a_ito, today, today, today) < tol
+
 
 cov_date = ForwardCovariance(ito_set_, today, later_date)
 abs(cov_date.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(later_date) - years_from_global_base(today))) < tol

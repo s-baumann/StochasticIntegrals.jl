@@ -9,18 +9,7 @@ function _one_iterate(cutoff_multiplier::Real, target::Real, draws::Array{T,2}, 
     confidence_gap = target - mass_in_area
     return cutoff_multiplier + confidence_gap * tuning_parameter
 end
-function _sobols(chol, num::Integer, sob_seq::SobolSeq)
-    dims = size(chol)[1]
-    float_type = typeof(chol[1,1])
-    array = Array{float_type,2}(undef, num, dims)
-    for i in 1:num
-        sobs = next!(sob_seq)
-        normal_draw = quantile.(Ref(Normal()), sobs)
-        scaled_draw = chol * normal_draw
-        array[i,:] = scaled_draw
-    end
-    return array
-end
+
 function _randoms(chol, num::Integer, Seed::Integer)
     twist = MersenneTwister(Seed)
     dims = size(chol)[1]

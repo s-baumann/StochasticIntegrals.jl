@@ -67,23 +67,6 @@ function covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Union{Date,DateTi
 end
 
 """
-    correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
-    correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
-Get the correlation of two ItoIntegrals over a certain period given the underlying Brownian processes have a correlation of gaussian_correlation.
-"""
-function correlation(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
-    cov =  covar(ito1,ito2, base, from, to, gaussian_correlation)
-    var1 = var(ito1, from, to)
-    var2 = var(ito2, from, to)
-    return gaussian_correlation * (cov / (var1 * var2))
-end
-function correlation(ito1::ItoIntegral,ito2::ItoIntegral,  base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
-    from_fl = years_between(from, base)
-    to_fl   = years_between(to, base)
-    return correlation(ito1, ito2, from_fl, to_fl, gaussian_correlation)
-end
-
-"""
     brownians_in_use(itos::Array{ItoIntegral,1}, brownians::Array{Symbol,1})
 Determine which Browninan processes are used in an array of ItoIntegrals.
 """
