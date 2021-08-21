@@ -1,7 +1,7 @@
 name = "StochasticIntegrals"
 uuid = "b15139f2-feda-5ba7-9a2a-3fc816fb5551"
 authors = ["Stuart Baumann <stuart@stuartbaumann.com>"]
-version = "0.4.2"
+version = "0.4.3"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -18,7 +18,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 UnivariateFunctions = "368b7869-440d-5a68-a3d1-bbc86b0a93b0"
 
 [compat]
-DataFrames = "0.20 - 0.999999"
+DataFrames = "0.20 - 1.999999"
 DataStructures = "0.18 - 0.999999"
 Distributions = "0.20 - 0.999999"
 Documenter = "0.27 - 0.999999"
