@@ -12,13 +12,6 @@ function evolve(itoprocess::ItoProcess, stochastic::Real, new_time::Real)
   return ItoProcess(new_time, new_const, itoprocess.drift, itoprocess.stochastic)
 end
 
-function evolve(itoprocesses::Dict{Symbol,ItoProcess{R}}, stochastics::Dict{Symbol,R}, new_time::Real) where R<:Real
-  for k in keys(itoprocesses)
-    itoprocesses[k] = evolve(itoprocesses[k], stochastics[k], new_time)
-  end
-  return itoprocesses
-end
-
 function evolve(itoprocesses::Dict{Symbol,ItoProcess{R}}, stochastics::Union{Dict{Symbol,R},Dict{Symbol,Real}}, new_time::Real) where R<:Real
   for k in keys(itoprocesses)
     itoprocesses[k] = evolve(itoprocesses[k], stochastics[k], new_time)

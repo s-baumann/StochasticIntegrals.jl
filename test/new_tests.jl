@@ -15,6 +15,7 @@ GBP_vol = 0.001
 GBP_FX_Vol = 0.2
 
 today = Date(2016,12,1)
+tommorow = Date(2016,12,2)
 date_2020 = Date(2020,12,1)
 later_date = Date(2035,12,1)
 later_later_date = Date(2080,12,1)
@@ -50,7 +51,8 @@ covar = ForwardCovariance(ito_set_, years_from_global_base(today), years_from_gl
 abs(covar.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(date_2020) - years_from_global_base(today))) < tol
 abs(covar.covariance_[1,1] - variance(USD_IR_a_ito, years_from_global_base(today), years_from_global_base(date_2020))) < tol
 variance(USD_IR_a_ito, today, today, today) < tol
-
+variance(USD_IR_a_ito, today, tommorow, today) < tol
+covariance(USD_IR_a_ito, USD_IR_a_ito, today, today, today, 1.0) < tol
 
 cov_date = ForwardCovariance(ito_set_, today, later_date)
 abs(cov_date.covariance_[5,5] - GBP_FX_Vol^2 * (years_from_global_base(later_date) - years_from_global_base(today))) < tol
