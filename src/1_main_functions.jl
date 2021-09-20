@@ -150,6 +150,9 @@ function make_covariance_matrix(ito_set_::ItoSet{T}, from::Real, to::Real) where
     return Hermitian(cov), ito_ids
 end
 
+
+abstract type StochasticIntegralsCovariance end
+
 """
     ForwardCovariance
 Creates an ForwardCovariance object. This contains :
@@ -163,7 +166,7 @@ And in the constructor the following items are generated and stored in the objec
 * The inverse of the covariance matrix.
 * The determinant of the covariance matrix.
 """
-struct ForwardCovariance
+struct ForwardCovariance <:StochasticIntegralsCovariance
     ito_set_::ItoSet
     from_::Real
     to_::Real
@@ -204,12 +207,13 @@ struct ForwardCovariance
         else
             old_duration = old_ForwardCovariance.to_ - old_ForwardCovariance.from_
             new_duration = to - from
-            covariance_  = old_ForwardCovariance.covariance_ * (new_duration/old_duration)
+            relative_duration = new_duration/old_duration
+            covariance_  = old_ForwardCovariance.covariance_ * (relative_duration)
             covariance_labels_ = old_ForwardCovariance.covariance_labels_
 
-            chol_ = ismissing(old_ForwardCovariance.chol_) ? missing : LowerTriangular(old_ForwardCovariance.chol_ .* sqrt((new_duration/old_duration)))
-            inverse_ = ismissing(old_ForwardCovariance.inverse_) ? missing : Hermitian(old_ForwardCovariance.inverse_ ./  ((new_duration/old_duration)))
-            determinant_ = ismissing(old_ForwardCovariance.determinant_) ? missing : old_ForwardCovariance.determinant_ *  ((new_duration/old_duration)^length(covariance_labels_))
+            chol_ = ismissing(old_ForwardCovariance.chol_) ? missing : LowerTriangular(old_ForwardCovariance.chol_ .* sqrt((relative_duration)))
+            inverse_ = ismissing(old_ForwardCovariance.inverse_) ? missing : Hermitian(old_ForwardCovariance.inverse_ ./  ((relative_duration)))
+            determinant_ = ismissing(old_ForwardCovariance.determinant_) ? missing : old_ForwardCovariance.determinant_ *  ((relative_duration)^length(covariance_labels_))
             return new(old_ForwardCovariance.ito_set_, from, to, covariance_, covariance_labels_, chol_, inverse_, determinant_)
         end
     end
@@ -219,6 +223,36 @@ struct ForwardCovariance
         return ForwardCovariance(old_ForwardCovariance.ito_set_, from_, to_; recalculate_all = recalculate_all)
     end
 end
+
+mutable struct SimpleCovariance <: StochasticIntegralsCovariance
+    ito_set_::ItoSet
+    from_::Real
+    to_::Real
+    covariance_::Hermitian
+    covariance_labels_::Array{Symbol,1}
+    chol_::Union{Missing,LowerTriangular}
+    inverse_::Union{Missing,Hermitian}
+    determinant_::Union{Missing,Real}
+    function SimpleCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
+             calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
+        fc = ForwardCovariance(ito_set_, from_, to_; calculate_chol = calculate_chol, calculate_inverse = calculate_inverse, calculate_determinant = calculate_determinant)
+        return new(fc.ito_set_, fc.from_, fc.to_, fc.covariance_, fc.covariance_labels_, fc.chol_, fc.inverse_, fc.determinant_)
+    end
+end
+
+function update!(sc::SimpleCovariance, from::Real, to::Real)
+    old_duration = sc.to_ - sc.from_
+    new_duration = to - from
+    relative_duration = new_duration/old_duration
+    sc.covariance_  = sc.covariance_ * (relative_duration)
+    sc.chol_ = ismissing(sc.chol_) ? missing : LowerTriangular(sc.chol_ .* sqrt(relative_duration))
+    sc.inverse_ = ismissing(sc.inverse_) ? missing : Hermitian(sc.inverse_ ./  (relative_duration))
+    sc.determinant_ = ismissing(sc.determinant_) ? missing : sc.determinant_ *  ((relative_duration)^length(covariance_labels_))
+    sc.from_ = from
+    sc.to_ = to
+    ##
+end
+
 
 """
     volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
@@ -284,14 +318,14 @@ get pseudorandom draws from a ForwardCovariance struct. Other schemes (like quas
 numbers in as the uniform_draw.
 If the antithetic_variates control is set to true then every second set of draws will be antithetic to the previous.
 """
-function get_draws(covar::ForwardCovariance; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
+function get_draws(covar::Union{ForwardCovariance,SimpleCovariance}; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
     number_of_itos = length(covar.covariance_labels_)
     normal_draw = quantile.(Ref(Normal()), uniform_draw)
     scaled_draw = covar.chol_ * normal_draw
     first_set_of_draws = Dict{Symbol,Real}(covar.covariance_labels_ .=> scaled_draw)
     return first_set_of_draws
 end
-function get_draws(covar::ForwardCovariance, num::Integer; number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)), antithetic_variates = false)
+function get_draws(covar::Union{ForwardCovariance,SimpleCovariance}, num::Integer; number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)), antithetic_variates = false)
     if antithetic_variates
         half_num = convert(Int, round(num/2))
         array_of_dicts = Array{Dict{Symbol,Real}}(undef, half_num*2)

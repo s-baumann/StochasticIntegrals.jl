@@ -4,7 +4,8 @@ makedocs(
     format = Documenter.HTML(),
     sitename = "StochasticIntegrals",
     modules = [StochasticIntegrals],
-    pages = ["index.md"]
+    pages = Any["Index" => "index.md",
+                "API" => "api.md"]
 )
 
 deploydocs(
