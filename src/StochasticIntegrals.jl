@@ -15,8 +15,8 @@ include("4_number_generators.jl")
 export NumberGenerator, Mersenne, SobolGen, next!
 include("1_main_functions.jl")
 export ItoIntegral, volatility, variance, covariance, correlation, ItoSet, ForwardCovariance
-export get_draws, get_zero_draws, pdf, make_covariance, log_likelihood, brownians_in_use
-export SimpleCovariance, update!
+export get_draws, get_zero_draws, pdf, make_covariance_matrix, log_likelihood, brownians_in_use
+export StochasticIntegralsCovariance, SimpleCovariance, update!
 include("2_data_conversions.jl")
 export to_draws, to_dataframe, to_array
 include("3_getConfidenceHypercube.jl")

@@ -133,7 +133,17 @@ end
 
 """
     make_covariance_matrix(ito_set_::ItoSet, from::Real, to::Real)
-Make a covariance matrix given an ItoSet and a period of time.
+Make a covariance matrix given an ItoSet and a period of time. This returns a
+Hermitian covariance matrix as well as a vector of symbols representing the axis
+labelling on this Hermitian.
+
+### Inputs
+* `ito_set_` - An ItoSet you want to make a covariance matrix from.
+* `from` - The (numeric) time from which the covariance span starts.
+* `to` - The (numeric) time at which the covariance span ends.
+### Returns
+* A `Hermitian` covariance matrix.
+* A `Vector{Symbol}` of labels for the covariance matrix.
 """
 function make_covariance_matrix(ito_set_::ItoSet{T}, from::Real, to::Real) where T<:Real
     number_of_itos = length(ito_set_.ito_integrals_)
@@ -150,12 +160,17 @@ function make_covariance_matrix(ito_set_::ItoSet{T}, from::Real, to::Real) where
     return Hermitian(cov), ito_ids
 end
 
-
+"""
+    StochasticIntegralsCovariance
+This is an abstract type which represents structs that represent covariances over spans of time.
+The concrete instances of this type should support extracting correlations, covariances, volatilities
+and random number generation.
+"""
 abstract type StochasticIntegralsCovariance end
 
 """
     ForwardCovariance
-Creates an ForwardCovariance object. This contains :
+Creates an ForwardCovariance struct. This contains :
 * An Itoset
 * Time From
 * Time To
@@ -165,6 +180,13 @@ And in the constructor the following items are generated and stored in the objec
 * The cholesky decomposition of the covariance matrix.
 * The inverse of the covariance matrix.
 * The determinant of the covariance matrix.
+
+The constructors are:
+    ForwardCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
+         calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
+    ForwardCovariance(ito_set_::ItoSet, from::Union{Date,DateTime}, to::Union{Date,DateTime})
+    ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Real, to::Real)
+    ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Union{Date,DateTime}, to::Union{Date,DateTime})
 """
 struct ForwardCovariance <:StochasticIntegralsCovariance
     ito_set_::ItoSet
@@ -175,14 +197,6 @@ struct ForwardCovariance <:StochasticIntegralsCovariance
     chol_::Union{Missing,LowerTriangular}
     inverse_::Union{Missing,Hermitian}
     determinant_::Union{Missing,Real}
-    """
-    ForwardCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
-             calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
-    ForwardCovariance(ito_set_::ItoSet, from::Union{Date,DateTime}, to::Union{Date,DateTime})
-    ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Real, to::Real)
-    ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Union{Date,DateTime}, to::Union{Date,DateTime})
-        These are constructors for a ForwardCovariance struct.
-    """
     function ForwardCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
              calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
         covariance_, covariance_labels_ = make_covariance_matrix(ito_set_, from_, to_)
@@ -224,6 +238,27 @@ struct ForwardCovariance <:StochasticIntegralsCovariance
     end
 end
 
+
+"""
+    SimpleCovariance
+Creates an SimpleCovariance struct. This is a simplified version of ForwardCovariance
+and is designed for Ito Integrals that are constant (so correlations do not need to be recalculated).
+This computational saving is the only advantage - ForwardCovariance is more general.
+It contains the same elements as a ForwardCovariance:
+* An Itoset
+* Time From
+* Time To
+And in the constructor the following items are generated and stored in the object:
+* A covariance matrix
+* Labels for the covariance matrix.
+* The cholesky decomposition of the covariance matrix.
+* The inverse of the covariance matrix.
+* The determinant of the covariance matrix.
+
+The constructors are:
+    SimpleCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
+         calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
+"""
 mutable struct SimpleCovariance <: StochasticIntegralsCovariance
     ito_set_::ItoSet
     from_::Real
@@ -240,6 +275,16 @@ mutable struct SimpleCovariance <: StochasticIntegralsCovariance
     end
 end
 
+"""
+    update!(sc::SimpleCovariance, from::Real, to::Real)
+This takes a SimpleCovariance and updates it for a new  span in time.
+The new span in time is between from and to. For SimpleCovariance this is done by
+just adjusting the covariances for the new time span (with corresponding adjustments)
+to the cholesky, inverse, etc.
+
+The corresponding technique for a ForwardCovariance (which is also a StochasticIntegralsCovariance)
+is to feed it into a new ForwardCovariance constructor which will recalculate for the new span.
+"""
 function update!(sc::SimpleCovariance, from::Real, to::Real)
     old_duration = sc.to_ - sc.from_
     new_duration = to - from

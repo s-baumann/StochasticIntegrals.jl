@@ -13,6 +13,7 @@ Pages = ["api.md"]
 ```@docs
 ItoIntegral
 ItoSet
+StochasticIntegralsCovariance
 ForwardCovariance
 SimpleCovariance
 ```
@@ -46,7 +47,7 @@ variance
 covariance
 correlation
 pdf
-make_covariance
+make_covariance_matrix
 log_likelihood
 brownians_in_use
 update!

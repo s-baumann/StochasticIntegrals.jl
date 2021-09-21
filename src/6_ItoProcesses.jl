@@ -76,18 +76,7 @@ function make_ito_process_non_syncronous_time_series(ito_processes::Dict{Symbol,
       starts = vcat(rand.(Ref(timing_twister), values(update_rates), 1)...)
       next_tick = at_time + minimum(starts)
 
-      #oldito = deepcopy(ito_processes)
-      #old_covar = deepcopy(covar)
-
       ito_processes, covar = evolve_covar_and_ito_processes(ito_processes, covar, next_tick; number_generator = number_generator)
-
-      #vals = map( a -> ito_processes[a].value, assets )
-      #if any(isnan.(vals))
-      #  bson(string("C:\\Dropbox\\Julia_Library\\debug\\make_ito_process_non_syncronous_time_series_not_good.bson"),
-      #       Dict{String,Any}(["ito_processes", "covar", "update_rates", "total_number_of_ticks", "timing_twister", "starts", "next_tick", "oldito", "old_covar", "d1", "i", "assets", "at_time", "number_generator" ] .=>
-      #              [ito_processes, covar, update_rates, total_number_of_ticks, timing_twister, starts, next_tick, oldito, old_covar, d1, i, assets, at_time, number_generator ]))
-      #  error("make_ito_process_non_syncronous_time_series_not_good")
-      #end
 
       # Moving everything up to the tick.
       what_stock = collect(keys(update_rates))[findall(abs.(starts .- minimum(starts)) .< 1e-15)[1]]
