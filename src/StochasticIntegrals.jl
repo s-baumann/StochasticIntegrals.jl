@@ -24,6 +24,6 @@ export get_confidence_hypercube
 include("5_conditional_distributions.jl")
 export generate_conditioned_distribution
 include("6_ItoProcesses.jl")
-export ItoProcess, evolve, evolve_covar_and_ito_processes, make_ito_process_syncronous_time_series, make_ito_process_non_syncronous_time_series
+export ItoProcess, evolve!, evolve_covar_and_ito_processes!, make_ito_process_syncronous_time_series, make_ito_process_non_syncronous_time_series
 
 end

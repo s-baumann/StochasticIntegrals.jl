@@ -1,12 +1,14 @@
 const tol = 10*eps()
 
 """
-ItoIntegral
 A struct detailing an ito integral. It contains a UnivariateFunction detailing the integrand as well as a symbol detailing an id of the integral's processes.
 
 Usual (and most general) contructor is:
+
     ItoIntegral(brownian_id_::Symbol, f_::UnivariateFunction)
+
 Convenience constructor for ItoIntegrals where the integrand is a flat function is:
+
     ItoIntegral(brownian_id_::Symbol, variance_::Real)
 """
 struct ItoIntegral
@@ -24,6 +26,12 @@ end
     variance(ito::ItoIntegral, from::Real, to::Real)
     variance(ito::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime})
 Get the variance of an ItoIntegral from one point of time to another.
+### Inputs
+* `ito` - The ito integral you want the variance for.
+* `from` - The time at which the integration starts.
+* `to` - The time at which the integration ends.
+### Outputs
+* A scalar
 """
 function variance(ito::ItoIntegral, from::Real, to::Real)
     if from + eps() > to
@@ -41,6 +49,11 @@ end
 """
     volatility(ito::ItoIntegral, on::Union{Date,DateTime})
 Get the volatility of an ItoIntegral on a certain date.
+### Inputs
+* `ito` - The ito integral you want the volatility for.
+* `on` - What instant do you want the volatility for.
+### Outputs
+* A scalar
 """
 function volatility(ito::ItoIntegral, on::Union{Date,DateTime})
     return ito.f_(on)
@@ -53,6 +66,15 @@ end
     covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
     covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
 Get the covariance of two ItoIntegrals over a certain period given the underlying Brownian processes have a correlation of gaussian_correlation.
+### Inputs
+* `ito1` - The first ito integral
+* `ito2` - The second ito integral
+* `from` - The start of the period
+* `to` - The end of the period
+* `gaussian_correlation` - The correlation between the brownians for each of the two itos. This should be in the range [-1,1].
+* `on` - What instant do you want the volatility for.
+### Outputs
+* A scalar
 """
 function covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
     if from + eps() >= to
@@ -69,6 +91,12 @@ end
 """
     brownians_in_use(itos::Array{ItoIntegral,1}, brownians::Array{Symbol,1})
 Determine which Browninan processes are used in an array of ItoIntegrals.
+### Inputs
+* itos - A dict containing each of the ito integrals
+* brownians - All possible brownians
+### Outputs
+* A `Vector` of what brownians are in use in itos
+* A `Vector` with the indices of these brownians.
 """
 function brownians_in_use(itos::Dict{Symbol,ItoIntegral}, brownians::Array{Symbol,1})
     all_brownians_in_use = unique(map(x -> x.brownian_id_ , values(itos)))
@@ -78,7 +106,6 @@ function brownians_in_use(itos::Dict{Symbol,ItoIntegral}, brownians::Array{Symbo
 end
 
 """
-    ItoSet
 Creates an ItoSet. This contains :
 * A correlation matrix of brownian motions.
 * A vector giving the axis labels for this correlation matrix.
@@ -107,6 +134,12 @@ end
     correlation(ito::ItoSet, index1::Integer, index2::Integer)
     correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
 Get correlation between brownian motions in an ItoSet.
+### Inputs
+* `ito` - An ItoSet that you want the correlation for two itos within.
+* `index1` or `brownian_id1` - The index/key for the first ito integral.
+* `index2` or `brownian_id2` - The index/key for the second ito integral.
+### Returns
+* A scalar
 """
 function correlation(ito::ItoSet, index1::Integer, index2::Integer)
     return ito.brownian_correlation_matrix_[index1, index2]
@@ -121,6 +154,12 @@ end
     volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
     volatility(ito::ItoSet, ito_integral_id::Symbol, on::Union{Date,DateTime})
 Get volatility of an ito_integral on a date.
+### Inputs
+* `ito` - An ItoSet that you want the volatility for.
+* `index` - The key of the ito dict that you are interested in
+* `on` The time or instant you want the volatility for.
+### Returns
+* A scalar
 """
 function volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
     return volatility(ito.ito_integrals_[index], on)
@@ -284,6 +323,12 @@ to the cholesky, inverse, etc.
 
 The corresponding technique for a ForwardCovariance (which is also a StochasticIntegralsCovariance)
 is to feed it into a new ForwardCovariance constructor which will recalculate for the new span.
+### Inputs
+* `sc` - The SimpleCovariance struct.
+* `from` - The time from which you want the covariance for.
+* `to` - The time to which you want the covariance for.
+### Returns
+Nothing. It juts updates the sc struct you pass in as an input.
 """
 function update!(sc::SimpleCovariance, from::Real, to::Real)
     old_duration = sc.to_ - sc.from_
@@ -295,14 +340,19 @@ function update!(sc::SimpleCovariance, from::Real, to::Real)
     sc.determinant_ = ismissing(sc.determinant_) ? missing : sc.determinant_ *  ((relative_duration)^length(covariance_labels_))
     sc.from_ = from
     sc.to_ = to
-    ##
 end
 
 
 """
     volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
     volatility(covar::ForwardCovariance, id::Symbol, on::Union{Date,DateTime})
-Get the volatility of an ItoIntegral on a date..
+Get the volatility of an ForwardCovariance on a date.
+### Inputs
+* `covar` - An ForwardCovariance that you want the volatility for.
+* `index` - The key of the ito dict that you are interested in
+* `on` The time or instant you want the volatility for.
+### Returns
+* A scalar
 """
 function volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
     return volatility(covar.ito_set_, index, on)
@@ -314,7 +364,12 @@ end
 """
     variance(covar::ForwardCovariance, id::Symbol)
     variance(covar::ForwardCovariance, index::Integer)
-Get the variance of an ItoIntegral over a period.
+Get the variance of an ForwardCovariance over a period.
+### Inputs
+* `covar` - An ForwardCovariance that you want the variance for.
+* `id` or `index` - The key/index of the ito dict that you are interested in
+### Returns
+* A scalar
 """
 function variance(covar::ForwardCovariance, id::Symbol)
         index = findall(id .== covar.covariance_labels_)[1]
@@ -327,7 +382,13 @@ end
 """
     covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
-Get the covariance of two ItoIntegrals over a period.
+Get the covariance of two ito integrals in a ForwardCovariance over a period.
+### Inputs
+* `covar` - An ForwardCovariance that you want the covariance for.
+* `index_1` or `id1` - The key/index of the first ito that you are interested in
+* `index_2` or `id2` - The key/index of the second ito that you are interested in
+### Returns
+* A scalar
 """
 function covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     return covar.covariance_[index_1,index_2]
@@ -342,6 +403,12 @@ end
     correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
 Get the correlation of two ItoIntegrals over a period.
+### Inputs
+* `covar` - An ForwardCovariance that you want the correlation for.
+* `index_1` or `id1` - The key/index of the first ito that you are interested in
+* `index_2` or `id2` - The key/index of the second ito that you are interested in
+### Returns
+* A scalar
 """
 function correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     cova = covariance(covar, index_1, index_2)
@@ -358,10 +425,12 @@ end
 ## Random draws
 """
     get_draws(covar::ForwardCovariance; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
-    get_draws(covar::ForwardCovariance, num::Integer; twister::MersenneTwister = MersenneTwister(1234), antithetic_variates = false)
-get pseudorandom draws from a ForwardCovariance struct. Other schemes (like quasirandom) can be done by inserting quasirandom
-numbers in as the uniform_draw.
-If the antithetic_variates control is set to true then every second set of draws will be antithetic to the previous.
+
+### Inputs
+* `covar` - An ForwardCovariance or SimpleCovariance struct that you want to draw from.
+* `uniform_draw`- The draw vector (from the uniform distribution)
+### Returns
+* A Dict of draws.
 """
 function get_draws(covar::Union{ForwardCovariance,SimpleCovariance}; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
     number_of_itos = length(covar.covariance_labels_)
@@ -370,6 +439,19 @@ function get_draws(covar::Union{ForwardCovariance,SimpleCovariance}; uniform_dra
     first_set_of_draws = Dict{Symbol,Real}(covar.covariance_labels_ .=> scaled_draw)
     return first_set_of_draws
 end
+"""
+    get_draws(covar::ForwardCovariance, num::Integer; twister::MersenneTwister = MersenneTwister(1234), antithetic_variates = false)
+get pseudorandom draws from a ForwardCovariance struct. Other schemes (like quasirandom) can be done by inserting quasirandom
+numbers in as the uniform_draw.
+If the antithetic_variates control is set to true then every second set of draws will be antithetic to the previous.
+
+### Inputs
+* `covar` - An ForwardCovariance or SimpleCovariance struct that you want to draw from.
+* `num`- The number of draws you want
+* `twister`- The number of draws you want
+### Returns
+* A `Vector` of `Dict`s of draws.
+"""
 function get_draws(covar::Union{ForwardCovariance,SimpleCovariance}, num::Integer; number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)), antithetic_variates = false)
     if antithetic_variates
         half_num = convert(Int, round(num/2))
@@ -397,6 +479,10 @@ end
 """
     get_zero_draws(covar::ForwardCovariance)
 get a draw of zero for all ito_integrals. May be handy for bug hunting.
+### Inputs
+* covar - the ForwardCovariance struct that you want zero draws from
+### Outputs
+* A `Dict` of zero draws
 """
 function get_zero_draws(covar::ForwardCovariance)
     return Dict{Symbol,Real}(covar.covariance_labels_ .=> 0.0)
@@ -405,6 +491,11 @@ end
 """
     get_zero_draws(covar::ForwardCovariance, num::Integer)
 get an array of zero draws for all ito_integrals. May be handy for bug hunting.
+### Inputs
+* `covar` - the ForwardCovariance struct that you want zero draws from
+* `num` - The number of zero draws you want.
+### Outputs
+* A `Vector` of `Dict`s of zero draws
 """
 function get_zero_draws(covar::ForwardCovariance, num::Integer)
     array_of_dicts = Array{Dict{Symbol,Real}}(undef, num)
@@ -416,7 +507,13 @@ end
 
 """
     pdf(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
-get the value of the pdf at some coordinates.
+get the value of the pdf at some coordinates. Note that it is assumed that
+the mean of the multivariate gaussian is the zero vector.
+### Inputs
+* `covar` - the ForwardCovariance struct that you want to evaluate the pdf
+* `coordinates` - The coordinates you want to examine.
+### Outputs
+* A scalar
 """
 function pdf(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma^{-1} (x - \mu))
@@ -429,7 +526,13 @@ end
 
 """
     log_likelihood(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
-get the log likelihood at some coordinates.
+get the log likelihood at some coordinates. Note that it is assumed that
+the mean of the multivariate gaussian is the zero vector.
+### Inputs
+* `covar` - the ForwardCovariance struct that you want to evaluate the log likelihood.
+* `coordinates` - The coordinates you want to examine.
+### Outputs
+* A scalar
 """
 function log_likelihood(covar::ForwardCovariance, coordinates::Dict{Symbol,R}) where R<:Real
     # The pdf is det(2\pi\Sigma)^{-0.5}\exp(-0.5(x - \mu)^\prime \Sigma(x - \mu))
