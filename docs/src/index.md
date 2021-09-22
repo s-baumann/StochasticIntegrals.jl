@@ -76,4 +76,4 @@ See the testing files for more code examples.
 
 ## Data conversions
 
-StochasticIntegrals generates draws from stochastic integrals and places them into an array of `Dict`s. Sometimes it is easier to use data in an array or in a `DataFrame`. The `to\_draws`, `to\_dataframe` and `to\_array` functions are convenience functions that convert datastructures between draws (`Vector{Dict{Symbol,Float64}}`), `DataFrame`s and `Vector`s.
+StochasticIntegrals generates draws from stochastic integrals and places them into an array of `Dict`s. Sometimes it is easier to use data in an array or in a `DataFrame`. The `to_draws`, `to_dataframe` and `to_array` functions are convenience functions that convert datastructures between draws (`Vector{Dict{Symbol,Float64}}`), `DataFrame`s and `Vector`s.
