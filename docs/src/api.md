@@ -33,8 +33,8 @@ get_zero_draws
 
 ```@docs
 ItoProcess
-evolve
-evolve_covar_and_ito_processes
+evolve!
+evolve_covar_and_ito_processes!
 make_ito_process_syncronous_time_series
 make_ito_process_non_syncronous_time_series
 ```
