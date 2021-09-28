@@ -4,7 +4,7 @@
 """
     to_array(draws::Array{Dict{Symbol,T},1}; labels::Array{Symbol,1}  = collect(keys(draws[1]))) where T<:Real
     to_array(dd::DataFrame; labels::Array{Symbol,1} =  Symbol.(names(dd)))
-Convert draws or a dataframe to an array and a vector of column labels.
+Convert draws or a `DataFrame` to an array and a vector of column labels.
 """
 function to_array(draws::Array{Dict{Symbol,T},1}; labels::Array{Symbol,1}  = collect(keys(draws[1]))) where T<:Real
     X = Array{T,2}(undef,length(draws), length(labels))
@@ -27,7 +27,7 @@ end
 """
     to_draws(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X)[2]))
     to_draws(dd::DataFrame; labels::Array{Symbol,1} =  Symbol.(names(dd)))
-Convert array or dataframe to a vector of dicts containing draws.
+Convert array or dataframe to a vector of `Dict`s containing draws.
 """
 function to_draws(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X)[2])) where T<:Real
     draws = Array{Dict{Symbol,T},1}()
@@ -56,7 +56,7 @@ end
 """
     to_dataframe(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X)[2]))
     to_dataframe(draws::Array{Dict{Symbol,T},1}; labels::Array{Symbol,1}  = collect(keys(draws[1])))
-Convert arrys or vectors of dicts to a dataframe.
+Convert `Array`s or `Vector`s of `Dict`s to a `DataFrame`.
 """
 function to_dataframe(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X)[2])) where T<:Real
     dd = DataFrame()

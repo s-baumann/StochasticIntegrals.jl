@@ -26,7 +26,7 @@ end
 
 """
     get_confidence_hypercube(covar::ForwardCovariance, confidence_level::Real, data::Array{T,2}; tuning_parameter::Real = 1.0)
-This returns the endpoints of a hypercube that contains confidence_level% of the dataset.
+This returns the endpoints of a hypercube that contains confidence_level (%) of the dataset.
 """
 function get_confidence_hypercube(covar::ForwardCovariance, confidence_level::Real, data::Array{T,2}; tuning_parameter::Real = 1.0, ConvergenceMetricThreshold::Real = 1e-10) where T<:Real
     # Using a univariate guess as we can get these pretty cheaply.

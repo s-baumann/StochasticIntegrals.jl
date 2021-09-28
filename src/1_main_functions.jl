@@ -7,7 +7,7 @@ Usual (and most general) contructor is:
 
     ItoIntegral(brownian_id_::Symbol, f_::UnivariateFunction)
 
-Convenience constructor for ItoIntegrals where the integrand is a flat function is:
+Convenience constructor for `ItoIntegral`s where the integrand is a flat function is:
 
     ItoIntegral(brownian_id_::Symbol, variance_::Real)
 """
@@ -25,9 +25,9 @@ end
 """
     variance(ito::ItoIntegral, from::Real, to::Real)
     variance(ito::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime})
-Get the variance of an ItoIntegral from one point of time to another.
+Get the variance of an `ItoIntegral` from one point of time to another.
 ### Inputs
-* `ito` - The ito integral you want the variance for.
+* `ito` - The `ItoIntegral` you want the variance for.
 * `from` - The time at which the integration starts.
 * `to` - The time at which the integration ends.
 ### Outputs
@@ -48,9 +48,9 @@ end
 
 """
     volatility(ito::ItoIntegral, on::Union{Date,DateTime})
-Get the volatility of an ItoIntegral on a certain date.
+Get the volatility of an `ItoIntegral` on a certain date.
 ### Inputs
-* `ito` - The ito integral you want the volatility for.
+* `ito` - The `ItoIntegral` you want the volatility for.
 * `on` - What instant do you want the volatility for.
 ### Outputs
 * A scalar
@@ -65,10 +65,10 @@ end
 """
     covariance(ito1::ItoIntegral,ito2::ItoIntegral, from::Real, to::Real, gaussian_correlation::Real)
     covariance(ito1::ItoIntegral,ito2::ItoIntegral, base::Union{Date,DateTime}, from::Union{Date,DateTime}, to::Union{Date,DateTime}, gaussian_correlation::Real)
-Get the covariance of two ItoIntegrals over a certain period given the underlying Brownian processes have a correlation of gaussian_correlation.
+Get the covariance of two `ItoIntegral`s over a certain period given the underlying Brownian processes have a correlation of `gaussian_correlation`.
 ### Inputs
-* `ito1` - The first ito integral
-* `ito2` - The second ito integral
+* `ito1` - The first `ItoIntegral`
+* `ito2` - The second `ItoIntegral`
 * `from` - The start of the period
 * `to` - The end of the period
 * `gaussian_correlation` - The correlation between the brownians for each of the two itos. This should be in the range [-1,1].
@@ -90,7 +90,7 @@ end
 
 """
     brownians_in_use(itos::Array{ItoIntegral,1}, brownians::Array{Symbol,1})
-Determine which Browninan processes are used in an array of ItoIntegrals.
+Determine which Browninan processes are used in an array of `ItoIntegral`s.
 ### Inputs
 * itos - A dict containing each of the ito integrals
 * brownians - All possible brownians
@@ -109,8 +109,8 @@ end
 Creates an ItoSet. This contains :
 * A correlation matrix of brownian motions.
 * A vector giving the axis labels for this correlation matrix.
-* A dict of ItoInterals. Here the keys should be ids for the ito integrals and the values should be ItoIntegrals.
-Determine which Brownian processes are used in an array of ItoIntegrals.
+* A dict of `ItoInteral`s. Here the keys should be ids for the ito integrals and the values should be `ItoIntegral`s.
+Determine which Brownian processes are used in an array of `ItoIntegral`s.
 """
 struct ItoSet{T<:Real}
     brownian_correlation_matrix_::Hermitian{T}
@@ -133,9 +133,9 @@ end
 """
     correlation(ito::ItoSet, index1::Integer, index2::Integer)
     correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
-Get correlation between brownian motions in an ItoSet.
+Get correlation between brownian motions in an `ItoSet`.
 ### Inputs
-* `ito` - An ItoSet that you want the correlation for two itos within.
+* `ito` - An `ItoSet` that you want the correlation for two itos within.
 * `index1` or `brownian_id1` - The index/key for the first ito integral.
 * `index2` or `brownian_id2` - The index/key for the second ito integral.
 ### Returns
@@ -153,9 +153,9 @@ end
 """
     volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
     volatility(ito::ItoSet, ito_integral_id::Symbol, on::Union{Date,DateTime})
-Get volatility of an ito_integral on a date.
+Get volatility of an `ito_integral` on a date.
 ### Inputs
-* `ito` - An ItoSet that you want the volatility for.
+* `ito` - An `ItoSet` that you want the volatility for.
 * `index` - The key of the ito dict that you are interested in
 * `on` The time or instant you want the volatility for.
 ### Returns
@@ -174,10 +174,10 @@ end
     make_covariance_matrix(ito_set_::ItoSet, from::Real, to::Real)
 Make a covariance matrix given an ItoSet and a period of time. This returns a
 Hermitian covariance matrix as well as a vector of symbols representing the axis
-labelling on this Hermitian.
+labelling on this `Hermitian`.
 
 ### Inputs
-* `ito_set_` - An ItoSet you want to make a covariance matrix from.
+* `ito_set_` - An `ItoSet` you want to make a covariance matrix from.
 * `from` - The (numeric) time from which the covariance span starts.
 * `to` - The (numeric) time at which the covariance span ends.
 ### Returns
@@ -209,10 +209,12 @@ abstract type StochasticIntegralsCovariance end
 
 """
     ForwardCovariance
-Creates an ForwardCovariance struct. This contains :
-* An Itoset
-* Time From
-* Time To
+
+Creates an `ForwardCovariance` struct. This contains :
+
+* An `Itoset`.
+* The time from which the covariance period starts.
+* The time to which the covariance period extends to.
 And in the constructor the following items are generated and stored in the object:
 * A covariance matrix
 * Labels for the covariance matrix.
@@ -221,8 +223,9 @@ And in the constructor the following items are generated and stored in the objec
 * The determinant of the covariance matrix.
 
 The constructors are:
+
     ForwardCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
-         calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
+                      calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
     ForwardCovariance(ito_set_::ItoSet, from::Union{Date,DateTime}, to::Union{Date,DateTime})
     ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Real, to::Real)
     ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Union{Date,DateTime}, to::Union{Date,DateTime})
@@ -279,14 +282,16 @@ end
 
 
 """
+
     SimpleCovariance
-Creates an SimpleCovariance struct. This is a simplified version of ForwardCovariance
-and is designed for Ito Integrals that are constant (so correlations do not need to be recalculated).
-This computational saving is the only advantage - ForwardCovariance is more general.
-It contains the same elements as a ForwardCovariance:
+
+Creates an `SimpleCovariance` struct. This is a simplified version of `ForwardCovariance`
+and is designed for `ItoIntegral`s that are constant (so correlations do not need to be recalculated).
+This computational saving is the only advantage - `ForwardCovariance` is more general.
+It contains the same elements as a `ForwardCovariance`:
 * An Itoset
-* Time From
-* Time To
+* The time from which the covariance period starts.
+* The time to which the covariance period extends to.
 And in the constructor the following items are generated and stored in the object:
 * A covariance matrix
 * Labels for the covariance matrix.
@@ -295,6 +300,7 @@ And in the constructor the following items are generated and stored in the objec
 * The determinant of the covariance matrix.
 
 The constructors are:
+
     SimpleCovariance(ito_set_::ItoSet, from_::Real, to_::Real;
          calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
 """
@@ -316,15 +322,16 @@ end
 
 """
     update!(sc::SimpleCovariance, from::Real, to::Real)
-This takes a SimpleCovariance and updates it for a new  span in time.
-The new span in time is between from and to. For SimpleCovariance this is done by
+
+This takes a `SimpleCovariance` and updates it for a new  span in time.
+The new span in time is between from and to. For `SimpleCovariance` this is done by
 just adjusting the covariances for the new time span (with corresponding adjustments)
 to the cholesky, inverse, etc.
 
-The corresponding technique for a ForwardCovariance (which is also a StochasticIntegralsCovariance)
-is to feed it into a new ForwardCovariance constructor which will recalculate for the new span.
+The corresponding technique for a `ForwardCovariance` (which is also a `StochasticIntegralsCovariance`)
+is to feed it into a new `ForwardCovariance` constructor which will recalculate for the new span.
 ### Inputs
-* `sc` - The SimpleCovariance struct.
+* `sc` - The `SimpleCovariance` struct.
 * `from` - The time from which you want the covariance for.
 * `to` - The time to which you want the covariance for.
 ### Returns
@@ -346,9 +353,9 @@ end
 """
     volatility(covar::ForwardCovariance, index::Integer, on::Union{Date,DateTime})
     volatility(covar::ForwardCovariance, id::Symbol, on::Union{Date,DateTime})
-Get the volatility of an ForwardCovariance on a date.
+Get the volatility of an `ForwardCovariance` on a date.
 ### Inputs
-* `covar` - An ForwardCovariance that you want the volatility for.
+* `covar` - An `ForwardCovariance` that you want the volatility for.
 * `index` - The key of the ito dict that you are interested in
 * `on` The time or instant you want the volatility for.
 ### Returns
@@ -364,9 +371,9 @@ end
 """
     variance(covar::ForwardCovariance, id::Symbol)
     variance(covar::ForwardCovariance, index::Integer)
-Get the variance of an ForwardCovariance over a period.
+Get the variance of an `ForwardCovariance` over a period.
 ### Inputs
-* `covar` - An ForwardCovariance that you want the variance for.
+* `covar` - An `ForwardCovariance` that you want the variance for.
 * `id` or `index` - The key/index of the ito dict that you are interested in
 ### Returns
 * A scalar
@@ -382,9 +389,9 @@ end
 """
     covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
-Get the covariance of two ito integrals in a ForwardCovariance over a period.
+Get the covariance of two ito integrals in a `ForwardCovariance` over a period.
 ### Inputs
-* `covar` - An ForwardCovariance that you want the covariance for.
+* `covar` - An `ForwardCovariance` that you want the covariance for.
 * `index_1` or `id1` - The key/index of the first ito that you are interested in
 * `index_2` or `id2` - The key/index of the second ito that you are interested in
 ### Returns
@@ -402,9 +409,9 @@ end
 """
     correlation(covar::ForwardCovariance, index_1::Integer, index_2::Integer)
     correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
-Get the correlation of two ItoIntegrals over a period.
+Get the correlation of two `ItoIntegral`s over a period.
 ### Inputs
-* `covar` - An ForwardCovariance that you want the correlation for.
+* `covar` - An `ForwardCovariance` that you want the correlation for.
 * `index_1` or `id1` - The key/index of the first ito that you are interested in
 * `index_2` or `id2` - The key/index of the second ito that you are interested in
 ### Returns
@@ -427,7 +434,7 @@ end
     get_draws(covar::ForwardCovariance; uniform_draw::Array{T,1} = rand(length(covar.covariance_labels_))) where T<:Real
 
 ### Inputs
-* `covar` - An ForwardCovariance or SimpleCovariance struct that you want to draw from.
+* `covar` - An `ForwardCovariance` or `SimpleCovariance` struct that you want to draw from.
 * `uniform_draw`- The draw vector (from the uniform distribution)
 ### Returns
 * A Dict of draws.
@@ -441,12 +448,12 @@ function get_draws(covar::Union{ForwardCovariance,SimpleCovariance}; uniform_dra
 end
 """
     get_draws(covar::ForwardCovariance, num::Integer; twister::MersenneTwister = MersenneTwister(1234), antithetic_variates = false)
-get pseudorandom draws from a ForwardCovariance struct. Other schemes (like quasirandom) can be done by inserting quasirandom
+get pseudorandom draws from a `ForwardCovariance` struct. Other schemes (like quasirandom) can be done by inserting quasirandom
 numbers in as the uniform_draw.
-If the antithetic_variates control is set to true then every second set of draws will be antithetic to the previous.
+If the `antithetic_variates` control is set to true then every second set of draws will be antithetic to the previous.
 
 ### Inputs
-* `covar` - An ForwardCovariance or SimpleCovariance struct that you want to draw from.
+* `covar` - An `ForwardCovariance` or `SimpleCovariance` struct that you want to draw from.
 * `num`- The number of draws you want
 * `twister`- The number of draws you want
 ### Returns
@@ -478,9 +485,9 @@ end
 # This is most likely useful for bug hunting.
 """
     get_zero_draws(covar::ForwardCovariance)
-get a draw of zero for all ito_integrals. May be handy for bug hunting.
+get a draw of zero for all `ItoIntegral`s. This may be handy for bug hunting.
 ### Inputs
-* covar - the ForwardCovariance struct that you want zero draws from
+* covar - the `ForwardCovariance` struct that you want zero draws from
 ### Outputs
 * A `Dict` of zero draws
 """
@@ -490,9 +497,9 @@ end
 # This is most likely useful for bug hunting.
 """
     get_zero_draws(covar::ForwardCovariance, num::Integer)
-get an array of zero draws for all ito_integrals. May be handy for bug hunting.
+get an array of zero draws for all `ItoIntegral`s. May be handy for bug hunting.
 ### Inputs
-* `covar` - the ForwardCovariance struct that you want zero draws from
+* `covar` - the `ForwardCovariance` struct that you want zero draws from
 * `num` - The number of zero draws you want.
 ### Outputs
 * A `Vector` of `Dict`s of zero draws
@@ -510,7 +517,7 @@ end
 get the value of the pdf at some coordinates. Note that it is assumed that
 the mean of the multivariate gaussian is the zero vector.
 ### Inputs
-* `covar` - the ForwardCovariance struct that you want to evaluate the pdf
+* `covar` - the `ForwardCovariance` struct that you want to evaluate the pdf
 * `coordinates` - The coordinates you want to examine.
 ### Outputs
 * A scalar
@@ -529,7 +536,7 @@ end
 get the log likelihood at some coordinates. Note that it is assumed that
 the mean of the multivariate gaussian is the zero vector.
 ### Inputs
-* `covar` - the ForwardCovariance struct that you want to evaluate the log likelihood.
+* `covar` - the `ForwardCovariance` struct that you want to evaluate the log likelihood.
 * `coordinates` - The coordinates you want to examine.
 ### Outputs
 * A scalar
