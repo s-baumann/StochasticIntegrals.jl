@@ -96,7 +96,7 @@ function evolve_covar_and_ito_processes!(itoprocesses::Union{Dict{Symbol,ItoProc
 end
 
 """
-make_ito_process_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}},
+    make_ito_process_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}},
                                                      covar::Union{ForwardCovariance,SimpleCovariance}, timegap::Real, total_number_of_ticks::Integer; ito_twister = MersenneTwister(2)) where R<:Real
 Evolve the `ItoProcess`es forward.
 ### Inputs
