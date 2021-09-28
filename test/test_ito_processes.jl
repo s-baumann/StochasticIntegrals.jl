@@ -60,3 +60,8 @@ for_series_nonsync  = make_ito_process_non_syncronous_time_series(deepcopy(ito_p
 abs(nrow(for_series_nonsync) - 1000) < 0.5
 simp_series_nonsync = make_ito_process_non_syncronous_time_series(deepcopy(ito_processes), deepcopy(simp_covar), update_rates , 1000)
 abs(nrow(simp_series_nonsync) - 1000) < 0.5
+
+# Testing rolling covariance by date.
+rolled_date = ForwardCovariance(for_covar, today, tommorow)
+rolled_numbers = ForwardCovariance(for_covar, years_from_global_base(today), years_from_global_base(tommorow))
+all(abs.(rolled_date.covariance_ .- rolled_numbers.covariance_) .< 100*eps())

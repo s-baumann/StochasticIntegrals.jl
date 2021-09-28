@@ -151,20 +151,15 @@ function correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
 end
 
 """
-    volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
     volatility(ito::ItoSet, ito_integral_id::Symbol, on::Union{Date,DateTime})
 Get volatility of an `ito_integral` on a date.
 ### Inputs
 * `ito` - An `ItoSet` that you want the volatility for.
-* `index` - The key of the ito dict that you are interested in
+* `ito_integral_id` - The key of the ito dict that you are interested in
 * `on` The time or instant you want the volatility for.
 ### Returns
 * A scalar
 """
-function volatility(ito::ItoSet, index::Integer, on::Union{Date,DateTime})
-    return volatility(ito.ito_integrals_[index], on)
-end
-
 function volatility(ito::ItoSet, ito_integral_id::Symbol, on::Union{Date,DateTime})
     ito_integral = ito.ito_integrals_[ito_integral_id]
     return volatility(ito_integral, on)
@@ -257,26 +252,13 @@ struct ForwardCovariance <:StochasticIntegralsCovariance
         return ForwardCovariance(ito_set_, from_, to_; calculate_chol = calculate_chol,
                   calculate_inverse = calculate_inverse, calculate_determinant = calculate_determinant)
     end
-    function ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Real, to::Real; recalculate_all::Bool = true)
-        if recalculate_all
-            return ForwardCovariance(old_ForwardCovariance.ito_set_, from, to)
-        else
-            old_duration = old_ForwardCovariance.to_ - old_ForwardCovariance.from_
-            new_duration = to - from
-            relative_duration = new_duration/old_duration
-            covariance_  = old_ForwardCovariance.covariance_ * (relative_duration)
-            covariance_labels_ = old_ForwardCovariance.covariance_labels_
-
-            chol_ = ismissing(old_ForwardCovariance.chol_) ? missing : LowerTriangular(old_ForwardCovariance.chol_ .* sqrt((relative_duration)))
-            inverse_ = ismissing(old_ForwardCovariance.inverse_) ? missing : Hermitian(old_ForwardCovariance.inverse_ ./  ((relative_duration)))
-            determinant_ = ismissing(old_ForwardCovariance.determinant_) ? missing : old_ForwardCovariance.determinant_ *  ((relative_duration)^length(covariance_labels_))
-            return new(old_ForwardCovariance.ito_set_, from, to, covariance_, covariance_labels_, chol_, inverse_, determinant_)
-        end
+    function ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Real, to::Real)
+        return ForwardCovariance(old_ForwardCovariance.ito_set_, from, to)
     end
-    function ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Union{Date,DateTime}, to::Union{Date,DateTime}; recalculate_all::Bool = true)
+    function ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Union{Date,DateTime}, to::Union{Date,DateTime})
         from_ = years_from_global_base(from)
         to_   = years_from_global_base(to)
-        return ForwardCovariance(old_ForwardCovariance.ito_set_, from_, to_; recalculate_all = recalculate_all)
+        return ForwardCovariance(old_ForwardCovariance.ito_set_, from_, to_)
     end
 end
 

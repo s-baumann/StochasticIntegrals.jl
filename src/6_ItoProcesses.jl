@@ -64,7 +64,7 @@ function evolve_covar_and_ito_processes!(itoprocesses::Union{Dict{Symbol,ItoProc
     evolve!(itoprocesses, stochastic_draws, new_time)
     return itoprocesses, covar
   end
-  new_covar = ForwardCovariance(covar, covar.to_, new_time; recalculate_all = true)
+  new_covar = ForwardCovariance(covar, covar.to_, new_time)
   stochastic_draws = get_draws(new_covar, 1; number_generator = number_generator)[1]
   evolve!(itoprocesses, stochastic_draws, new_time)
   return itoprocesses, new_covar
