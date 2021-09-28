@@ -31,7 +31,7 @@ function evolve!(itoprocess::ItoProcess, stochastic::Real, new_time::Real)
 end
 
 """
-    evolve!(itoprocesses::Dict{Symbol,ItoProcess{R}}, stochastics::Union{Dict{Symbol,R},Dict{Symbol,Real}}, new_time::Real) where R<:Real
+    evolve!(itoprocesses::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}}, stochastics::Union{Dict{Symbol,R},Dict{Symbol,Real}}, new_time::Real) where R<:Real
 Evolve the `ItoProcess` forward. This changes the time (`t0`) as well as the `value`.
 ### Inputs
 * `itoprocesses` - A `Dict` of `ItoProcess`es
@@ -40,14 +40,14 @@ Evolve the `ItoProcess` forward. This changes the time (`t0`) as well as the `va
 ### Return
 Nothing. It changes the input `ItoProcess`
 """
-function evolve!(itoprocesses::Dict{Symbol,ItoProcess{R}}, stochastics::Union{Dict{Symbol,R},Dict{Symbol,Real}}, new_time::Real) where R<:Real
+function evolve!(itoprocesses::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}}, stochastics::Union{Dict{Symbol,R},Dict{Symbol,Real}}, new_time::Real) where R<:Real
   for k in keys(itoprocesses)
     evolve!(itoprocesses[k], stochastics[k], new_time)
   end
 end
 
 """
-    evolve_covar_and_ito_processes!(itoprocesses::Dict{Symbol,ItoProcess{R}}, covar::ForwardCovariance, new_time::Real; number_generator::NumberGenerator) where R<:Real
+    evolve_covar_and_ito_processes!(itoprocesses::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}}, covar::ForwardCovariance, new_time::Real; number_generator::NumberGenerator) where R<:Real
 Evolve the `ItoProcess`es forward.
 ### Inputs
 * `itoprocesses` - A `Dict` of `ItoProcess`es
@@ -58,7 +58,7 @@ Evolve the `ItoProcess`es forward.
 * The updated `ItoProcess`es
 * The Covariance matrix
 """
-function evolve_covar_and_ito_processes!(itoprocesses::Dict{Symbol,ItoProcess{R}}, covar::ForwardCovariance, new_time::Real; number_generator::NumberGenerator) where R<:Real
+function evolve_covar_and_ito_processes!(itoprocesses::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}}, covar::ForwardCovariance, new_time::Real; number_generator::NumberGenerator) where R<:Real
   if new_time - covar.to_ < 1000*eps()
     stochastic_draws  = Dict{Symbol,Real}(covar.covariance_labels_ .=> Float64.(zeros(length(covar.covariance_labels_))))
     evolve!(itoprocesses, stochastic_draws, new_time)
@@ -71,7 +71,7 @@ function evolve_covar_and_ito_processes!(itoprocesses::Dict{Symbol,ItoProcess{R}
 end
 
 """
-    evolve_covar_and_ito_processes!(itoprocesses::Dict{Symbol,ItoProcess{R}}, covar::SimpleCovariance, new_time::Real; number_generator::NumberGenerator) where R<:Real
+    evolve_covar_and_ito_processes!(itoprocesses::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}}, covar::SimpleCovariance, new_time::Real; number_generator::NumberGenerator) where R<:Real
 Evolve the `ItoProcess`es forward.
 ### Inputs
 * `itoprocesses` - A `Dict` of `ItoProcess`es
@@ -82,7 +82,7 @@ Evolve the `ItoProcess`es forward.
 * The updated `ItoProcess`es
 * The Covariance matrix
 """
-function evolve_covar_and_ito_processes!(itoprocesses::Dict{Symbol,ItoProcess{R}}, covar::SimpleCovariance, new_time::Real; number_generator::NumberGenerator) where R<:Real
+function evolve_covar_and_ito_processes!(itoprocesses::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}}, covar::SimpleCovariance, new_time::Real; number_generator::NumberGenerator) where R<:Real
   if new_time - covar.to_ < 1000*eps()
     update!(covar, covar.from_, new_time) # Note that as newtime and to are about the same I am just trying to adjust the from time here.
     stochastic_draws  = Dict{Symbol,Real}(covar.covariance_labels_ .=> Float64.(zeros(length(covar.covariance_labels_))))
@@ -96,7 +96,7 @@ function evolve_covar_and_ito_processes!(itoprocesses::Dict{Symbol,ItoProcess{R}
 end
 
 """
-make_ito_process_syncronous_time_series(ito_processes::Dict{Symbol,ItoProcess{R}},
+make_ito_process_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}},
                                                      covar::Union{ForwardCovariance,SimpleCovariance}, timegap::Real, total_number_of_ticks::Integer; ito_twister = MersenneTwister(2)) where R<:Real
 Evolve the `ItoProcess`es forward.
 ### Inputs
@@ -108,8 +108,8 @@ Evolve the `ItoProcess`es forward.
 ### Return
 * A DataFrame with the ticks.
 """
-function make_ito_process_syncronous_time_series(ito_processes::Dict{Symbol,ItoProcess{R}},
-                                                     covar::Union{ForwardCovariance,SimpleCovariance}, timegap::Real, total_number_of_ticks::Integer; ito_twister = MersenneTwister(2)) where R<:Real
+function make_ito_process_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{T}},Dict{Symbol,ItoProcess}},
+                                                     covar::Union{ForwardCovariance,SimpleCovariance}, timegap::R, total_number_of_ticks::Integer; ito_twister = MersenneTwister(2)) where R<:Real where T<:Real
     assets = collect(keys(ito_processes))
     d1 = DataFrame(Time = Array{R}([]),Name = Array{Symbol}([]),Value = Array{R}([]))
     at_time = covar.to_
@@ -127,8 +127,8 @@ function make_ito_process_syncronous_time_series(ito_processes::Dict{Symbol,ItoP
 end
 
 """
-    make_ito_process_non_syncronous_time_series(ito_processes::Dict{Symbol,ItoProcess{R}},
-                                                covar::Union{ForwardCovariance,SimpleCovariance}, update_rates::Union{OrderedDict{Symbol,D},Dict{Symbol,D}},
+    make_ito_process_non_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}},
+                                                covar::Union{ForwardCovariance,SimpleCovariance}, update_rates::Union{OrderedDict{Symbol,D},Dict{Symbol,D},OrderedDict{Symbol,Distribution},Dict{Symbol,Distribution}},
                                                 total_number_of_ticks::Integer; timing_twister::MersenneTwister = MersenneTwister(1), ito_twister = MersenneTwister(2)) where R<:Real where D<:Distribution
 Evolve the `ItoProcess`es forward.
 ### Inputs
@@ -140,8 +140,8 @@ Evolve the `ItoProcess`es forward.
 ### Return
 * A DataFrame with the ticks.
 """
-function make_ito_process_non_syncronous_time_series(ito_processes::Dict{Symbol,ItoProcess{R}},
-                                                     covar::Union{ForwardCovariance,SimpleCovariance}, update_rates::Union{OrderedDict{Symbol,D},Dict{Symbol,D}},
+function make_ito_process_non_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}},
+                                                     covar::Union{ForwardCovariance,SimpleCovariance}, update_rates::Union{OrderedDict{Symbol,D},Dict{Symbol,D},OrderedDict{Symbol,Distribution},Dict{Symbol,Distribution}},
                                                      total_number_of_ticks::Integer; timing_twister::MersenneTwister = MersenneTwister(1), ito_twister = MersenneTwister(2)) where R<:Real where D<:Distribution
     update_rates = OrderedDict(update_rates)
     assets = collect(keys(ito_processes))
