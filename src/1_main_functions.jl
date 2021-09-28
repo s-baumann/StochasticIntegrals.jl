@@ -344,7 +344,7 @@ function update!(sc::SimpleCovariance, from::Real, to::Real)
     sc.covariance_  = sc.covariance_ * (relative_duration)
     sc.chol_ = ismissing(sc.chol_) ? missing : LowerTriangular(sc.chol_ .* sqrt(relative_duration))
     sc.inverse_ = ismissing(sc.inverse_) ? missing : Hermitian(sc.inverse_ ./  (relative_duration))
-    sc.determinant_ = ismissing(sc.determinant_) ? missing : sc.determinant_ *  ((relative_duration)^length(covariance_labels_))
+    sc.determinant_ = ismissing(sc.determinant_) ? missing : sc.determinant_ *  ((relative_duration)^length(sc.covariance_labels_))
     sc.from_ = from
     sc.to_ = to
 end
