@@ -9,7 +9,6 @@ using UnivariateFunctions
 using Random
 using Sobol: SobolSeq, next!
 using FixedPointAcceleration
-using BSON
 
 include("4_number_generators.jl")
 export NumberGenerator, Mersenne, SobolGen, next!
