@@ -22,8 +22,16 @@ struct Mersenne <: NumberGenerator
 end
 
 """
+    A NumberGenerator wrapper for `MersenneTwister`. This makes pseudorandom numbers.
+"""
+struct Stable_RNG <: NumberGenerator
+    rng_::StableRNG
+    number_of_itos_::UInt
+end
+
+"""
     next!(number_generator::NumberGenerator)
-This extracts a random draw given a number generator struct (like a `SobolGen` or a `Mersenne`).
+This extracts a random draw given a number generator struct (like a `SobolGen`, `Mersenne` or `Stable_RNG`).
 
 """
 function next!(number_generator::SobolGen)
@@ -31,4 +39,7 @@ function next!(number_generator::SobolGen)
 end
 function next!(number_generator::Mersenne)
     return rand(number_generator.twister_, number_generator.number_of_itos_)
+end
+function next!(number_generator::Stable_RNG)
+    return rand(number_generator.rng_, number_generator.number_of_itos_)
 end

@@ -96,24 +96,26 @@ function evolve_covar_and_ito_processes!(itoprocesses::Union{Dict{Symbol,ItoProc
 end
 
 """
-    make_ito_process_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}},
-                                                     covar::Union{ForwardCovariance,SimpleCovariance}, timegap::Real, total_number_of_ticks::Integer; ito_twister = MersenneTwister(2)) where R<:Real
+    make_ito_process_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{T}},Dict{Symbol,ItoProcess}},
+                                                     covar::Union{ForwardCovariance,SimpleCovariance}, timegap::R, total_number_of_ticks::Integer;
+                                                     number_generator::NumberGenerator = Mersenne(MersenneTwister(2), length(collect(keys(ito_processes))))) where R<:Real where T<:Real
+
 Evolve the `ItoProcess`es forward.
 ### Inputs
 * `itoprocesses` - A `Dict` of `ItoProcess`es
 * `covar` - The covariance matrix.
 * `timegap` - The time gap between ticks.
 * `total_number_of_ticks` - The total number of ticks.
-* `ito_twister` The `MersenneTwister` used for the RNG.
+* `number_generator` The `NumberGenerator` used for the RNG.
 ### Return
 * A DataFrame with the ticks.
 """
 function make_ito_process_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{T}},Dict{Symbol,ItoProcess}},
-                                                     covar::Union{ForwardCovariance,SimpleCovariance}, timegap::R, total_number_of_ticks::Integer; ito_twister = MersenneTwister(2)) where R<:Real where T<:Real
+                                                     covar::Union{ForwardCovariance,SimpleCovariance}, timegap::R, total_number_of_ticks::Integer;
+                                                     number_generator::NumberGenerator = Mersenne(MersenneTwister(2), length(collect(keys(ito_processes))))) where R<:Real where T<:Real
     assets = collect(keys(ito_processes))
     d1 = DataFrame(Time = Array{R}([]),Name = Array{Symbol}([]),Value = Array{R}([]))
     at_time = covar.to_
-    number_generator = Mersenne(ito_twister, length(assets))
     for i in 1:total_number_of_ticks
       next_tick = at_time + timegap
       ito_processes, covar = evolve_covar_and_ito_processes!(ito_processes, covar, next_tick; number_generator = number_generator)
@@ -128,8 +130,11 @@ end
 
 """
     make_ito_process_non_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}},
-                                                covar::Union{ForwardCovariance,SimpleCovariance}, update_rates::Union{OrderedDict{Symbol,D},Dict{Symbol,D},OrderedDict{Symbol,Distribution},Dict{Symbol,Distribution}},
-                                                total_number_of_ticks::Integer; timing_twister::MersenneTwister = MersenneTwister(1), ito_twister = MersenneTwister(2)) where R<:Real where D<:Distribution
+                                                     covar::Union{ForwardCovariance,SimpleCovariance}, update_rates::Union{OrderedDict{Symbol,D},Dict{Symbol,D},OrderedDict{Symbol,Distribution},Dict{Symbol,Distribution}},
+                                                     total_number_of_ticks::Integer;
+                                                     timing_twister::Union{StableRNG,MersenneTwister} = MersenneTwister(1),
+                                                     ito_number_generator::NumberGenerator = Mersenne(MersenneTwister(2), length(collect(keys(ito_processes))))
+                                                     ) where R<:Real where D<:Distribution
 Evolve the `ItoProcess`es forward.
 ### Inputs
 * `itoprocesses` - A `Dict` of `ItoProcess`es
@@ -142,18 +147,18 @@ Evolve the `ItoProcess`es forward.
 """
 function make_ito_process_non_syncronous_time_series(ito_processes::Union{Dict{Symbol,ItoProcess{R}},Dict{Symbol,ItoProcess}},
                                                      covar::Union{ForwardCovariance,SimpleCovariance}, update_rates::Union{OrderedDict{Symbol,D},Dict{Symbol,D},OrderedDict{Symbol,Distribution},Dict{Symbol,Distribution}},
-                                                     total_number_of_ticks::Integer; timing_twister::MersenneTwister = MersenneTwister(1), ito_twister = MersenneTwister(2)) where R<:Real where D<:Distribution
+                                                     total_number_of_ticks::Integer;
+                                                     timing_twister::Union{StableRNG,MersenneTwister} = MersenneTwister(1),
+                                                     ito_number_generator::NumberGenerator = Mersenne(MersenneTwister(2), length(collect(keys(ito_processes))))
+                                                     ) where R<:Real where D<:Distribution
     update_rates = OrderedDict(update_rates)
     assets = collect(keys(ito_processes))
     d1 = DataFrame(Time = Array{R}([]),Name = Array{Symbol}([]),Value = Array{R}([]))
     at_time = covar.to_
-    number_generator = Mersenne(ito_twister, length(assets))
     for i in 1:total_number_of_ticks
       starts = vcat(rand.(Ref(timing_twister), values(update_rates), 1)...)
       next_tick = at_time + minimum(starts)
-
-      ito_processes, covar = evolve_covar_and_ito_processes!(ito_processes, covar, next_tick; number_generator = number_generator)
-
+      ito_processes, covar = evolve_covar_and_ito_processes!(ito_processes, covar, next_tick; number_generator = ito_number_generator)
       # Moving everything up to the tick.
       what_stock = collect(keys(update_rates))[findall(abs.(starts .- minimum(starts)) .< 1e-15)[1]]
       d2 = Dict([:Time, :Name, :Value] .=> [next_tick, what_stock, ito_processes[what_stock].value])
