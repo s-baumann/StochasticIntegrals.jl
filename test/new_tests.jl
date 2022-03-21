@@ -9,7 +9,7 @@ using Test
     using Statistics: var, mean, cov
     using Sobol
     using Random
-    tol = 10*eps()
+    tol = 100*eps()
 
     USD_mean_reversion  = 0.15
     USD_vol = 0.01
