@@ -7,11 +7,12 @@ using Distributions
 using LinearAlgebra: Hermitian, cholesky, inv, det, LowerTriangular, diag
 using UnivariateFunctions
 using Random
+using StableRNGs
 using Sobol: SobolSeq, next!
 using FixedPointAcceleration
 
 include("4_number_generators.jl")
-export NumberGenerator, Mersenne, SobolGen, next!
+export NumberGenerator, Mersenne, SobolGen, Stable_RNG, next!
 include("1_main_functions.jl")
 export ItoIntegral, volatility, variance, covariance, correlation, ItoSet, ForwardCovariance
 export get_draws, get_zero_draws, pdf, make_covariance_matrix, log_likelihood, brownians_in_use

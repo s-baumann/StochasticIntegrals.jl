@@ -44,8 +44,8 @@ using Test
     stock_processes = Dict(assets .=> map(a -> ItoProcess(0.0, 0.0, PE_Function(0.00, 0.0, 0.0, 0), ito_integrals[a]), assets))
     update_rates = Dict(assets .=> Exponential.(    rand(twister, length(assets))))
 
-    ts_syncronous  = make_ito_process_syncronous_time_series(stock_processes, covar, mean(a-> update_rates[a].θ, assets),1000; ito_twister = twister)
+    ts_syncronous  = make_ito_process_syncronous_time_series(stock_processes, covar, mean(a-> update_rates[a].θ, assets),1000; number_generator = Mersenne(twister, 2))
     @test nrow(ts_syncronous) == 2000
-    ts_asyncronous = make_ito_process_non_syncronous_time_series(stock_processes, covar, update_rates, 1000; timing_twister = twister, ito_twister = twister)
+    ts_asyncronous = make_ito_process_non_syncronous_time_series(stock_processes, covar, update_rates, 1000; timing_twister = twister, ito_number_generator = Mersenne(twister,2))
     @test nrow(ts_asyncronous) == 1000
 end
