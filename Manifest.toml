@@ -2,7 +2,7 @@
 
 julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "48fb8041fa74f8a4712699bea1a447244e064c3f"
+project_hash = "ecef4e090697a25cd3a13cb693af90fdb212880a"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -233,9 +233,9 @@ weakdeps = ["PDMats", "SparseArrays", "Statistics"]
 
 [[deps.FixedPointAcceleration]]
 deps = ["Dates", "GLM", "LinearAlgebra", "Test"]
-git-tree-sha1 = "36eee0a0ad2698633f2dd0c52b450d64c537cd33"
+git-tree-sha1 = "225340714cd318b0d98710ccc2fa617c6388aefb"
 uuid = "817d07cb-a79a-5c30-9a31-890123675176"
-version = "0.3.4"
+version = "1.0.0"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
