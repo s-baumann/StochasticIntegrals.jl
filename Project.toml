@@ -1,7 +1,7 @@
 name = "StochasticIntegrals"
 uuid = "b15139f2-feda-5ba7-9a2a-3fc816fb5551"
 authors = ["Stuart Baumann <stuart@stuartbaumann.com>"]
-version = "0.6.1"
+version = "0.6.2"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -26,5 +26,5 @@ Documenter = "0.27 - 0.999999"
 FixedPointAcceleration = "1.0"
 Sobol = "1"
 StableRNGs = "1"
-UnivariateFunctions = "0.3"
+UnivariateFunctions = "0.4"
 julia = "1"
