@@ -34,6 +34,9 @@ function get_confidence_hypercube(covar::ForwardCovariance, confidence_level::Re
     # This runs once so that any error is explictly thrown and is traceable rather than being obscured by FixedPoint's try-catch
     #_ = _one_iterate.(guess, Ref(confidence_level), Ref(data), Ref(covar.covariance_), Ref(tuning_parameter))
     FP = fixed_point(x -> _one_iterate.(x, Ref(confidence_level), Ref(data), Ref(covar.covariance_), Ref(tuning_parameter)), [guess]; ConvergenceMetricThreshold = ConvergenceMetricThreshold, MaxIter = 10000)
+    if ismissing(FP.FixedPoint_)
+        error("Could not converge to a solution for the confidence hypercube. Try increasing the number of samples or adjusting the tuning parameter.")
+    end
     cutoff_multiplier = FP.FixedPoint_[1]
     cutoffs = vcat(zip(-cutoff_multiplier .* sqrt.(diag(covar.covariance_)) , cutoff_multiplier .* sqrt.(diag(covar.covariance_)))...)
     return Dict{Symbol,Tuple{T,T}}(covar.covariance_labels_ .=> cutoffs)

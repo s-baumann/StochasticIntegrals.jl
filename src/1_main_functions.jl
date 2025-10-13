@@ -247,8 +247,8 @@ struct ForwardCovariance <:StochasticIntegralsCovariance
     end
     function ForwardCovariance(ito_set_::ItoSet, from::Union{Date,DateTime}, to::Union{Date,DateTime};
              calculate_chol::Bool = true, calculate_inverse::Bool = true, calculate_determinant::Bool = true)
-        from_ = years_from_global_base(from)
-        to_   = years_from_global_base(to)
+        from_ = UnivariateFunctions.years_from_global_base_date(from)
+        to_   = UnivariateFunctions.years_from_global_base_date(to)
         return ForwardCovariance(ito_set_, from_, to_; calculate_chol = calculate_chol,
                   calculate_inverse = calculate_inverse, calculate_determinant = calculate_determinant)
     end
@@ -256,8 +256,8 @@ struct ForwardCovariance <:StochasticIntegralsCovariance
         return ForwardCovariance(old_ForwardCovariance.ito_set_, from, to)
     end
     function ForwardCovariance(old_ForwardCovariance::ForwardCovariance, from::Union{Date,DateTime}, to::Union{Date,DateTime})
-        from_ = years_from_global_base(from)
-        to_   = years_from_global_base(to)
+        from_ = UnivariateFunctions.years_from_global_base_date(from)
+        to_   = UnivariateFunctions.years_from_global_base_date(to)
         return ForwardCovariance(old_ForwardCovariance.ito_set_, from_, to_)
     end
 end

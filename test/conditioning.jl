@@ -1,15 +1,10 @@
 using Test
 
 @testset "Conditioning on variables" begin
-    using UnivariateFunctions
-    using StochasticIntegrals
-    using DataFrames
-    using Dates
-    using LinearAlgebra
-    using Distributions: Normal, MersenneTwister, quantile, Exponential
+    using UnivariateFunctions, StochasticIntegrals, DataFrames, Dates
+    using LinearAlgebra, Distributions
     using Statistics: var, mean, cov
-    using Sobol
-    using Random
+    using Sobol, Random
     tol = 10*eps()
     twister = MersenneTwister(22)
 
@@ -33,7 +28,7 @@ using Test
     ito_integrals = Dict([:CS, :BARC] .=> [CS_ito, BARC_ito])
 
     ito_set_ = ItoSet(brownian_corr_matrix, assets, ito_integrals)
-    covar = ForwardCovariance(ito_set_, years_from_global_base(today), years_from_global_base(tommorow))
+    covar = ForwardCovariance(ito_set_, years_from_global_base_date(today), years_from_global_base_date(tommorow))
 
     T = Float64
     conditioning_draws = Dict{Symbol,T}(:CS => 0.02)
@@ -87,7 +82,7 @@ CS_ito    = ItoIntegral(:CS, CS_vol)
 ito_integrals = Dict([:CS, :BARC] .=> [CS_ito, BARC_ito])
 
 ito_set_ = ItoSet(brownian_corr_matrix, assets, ito_integrals)
-covar = ForwardCovariance(ito_set_, years_from_global_base(today), years_from_global_base(tommorow))
+covar = ForwardCovariance(ito_set_, years_from_global_base_date(today), years_from_global_base_date(tommorow))
 
 T = Float64
 conditioning_draws = Dict{Symbol,T}(:CS => 0.02)

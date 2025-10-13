@@ -37,10 +37,10 @@ using Test
 
     ito_set_ = ItoSet(brownian_corr_matrix, brownian_ids, ito_integrals)
 
-    for_covar = ForwardCovariance(ito_set_, years_from_global_base(today),
-                                  years_from_global_base(date_2020))
-    simp_covar = SimpleCovariance(ito_set_, years_from_global_base(today),
-                                  years_from_global_base(date_2020))
+    for_covar = ForwardCovariance(ito_set_, years_from_global_base_date(today),
+                                  years_from_global_base_date(date_2020))
+    simp_covar = SimpleCovariance(ito_set_, years_from_global_base_date(today),
+                                  years_from_global_base_date(date_2020))
 
     # Making ItoProcesses
 
@@ -66,7 +66,7 @@ using Test
 
     # Testing rolling covariance by date.
     rolled_date = ForwardCovariance(for_covar, today, tommorow)
-    rolled_numbers = ForwardCovariance(for_covar, years_from_global_base(today), years_from_global_base(tommorow))
+    rolled_numbers = ForwardCovariance(for_covar, years_from_global_base_date(today), years_from_global_base_date(tommorow))
     @test all(abs.(rolled_date.covariance_ .- rolled_numbers.covariance_) .< 100*eps())
 
 end
