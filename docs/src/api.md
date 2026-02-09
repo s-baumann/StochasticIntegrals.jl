@@ -24,6 +24,7 @@ SimpleCovariance
 NumberGenerator
 Mersenne
 SobolGen
+Stable_RNG
 next!
 get_draws
 get_draws_matrix
