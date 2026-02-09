@@ -8,10 +8,7 @@ function generate_conditioned_distribution(covar::ForwardCovariance, conditionin
     what_conditioned_on = collect(keys(conditioning_draws))
     len = length(what_conditioned_on)
     if len < 1 error("Nothing that was input was in the covariance matrix. So nothing to condition on.") end
-    conditioning_indices = Array{typeof(Integer(1)),1}()
-    for i in 1:len
-        append!(conditioning_indices, findall(what_conditioned_on[i] .==  covar.covariance_labels_))
-    end
+    conditioning_indices = [findfirst(==(what_conditioned_on[i]), covar.covariance_labels_) for i in 1:len]
     other_indices = setdiff(1:length(covar.covariance_labels_), conditioning_indices)
     labels = covar.covariance_labels_[other_indices]
     # Segmenting the covariance matrix.
@@ -19,11 +16,9 @@ function generate_conditioned_distribution(covar::ForwardCovariance, conditionin
     sigma12 = covar.covariance_[other_indices,conditioning_indices]
     sigma21 = covar.covariance_[conditioning_indices,other_indices]
     sigma22 = covar.covariance_[conditioning_indices,conditioning_indices]
-    mu1     = zeros(length(other_indices))
-    mu2     = zeros(length(conditioning_indices))
     conditioned_values = map( x -> conditioning_draws[x], what_conditioned_on)
-    sigma12_invsigma22 = sigma12 * inv(sigma22)
-    conditional_mu = mu1 + sigma12_invsigma22 * (conditioned_values - mu2)
+    sigma12_invsigma22 = sigma12 / sigma22
+    conditional_mu = sigma12_invsigma22 * conditioned_values
     conditional_sigma = sigma11 -  sigma12_invsigma22 * sigma21
     return conditional_mu, conditional_sigma, labels
 end

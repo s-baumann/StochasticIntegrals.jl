@@ -1,4 +1,5 @@
 const tol = 10*eps()
+const log2π = log(2π)
 
 """
 A struct detailing an ito integral. It contains a UnivariateFunction detailing the integrand as well as a symbol detailing an id of the integral's processes.
@@ -145,8 +146,8 @@ function correlation(ito::ItoSet, index1::Integer, index2::Integer)
     return ito.brownian_correlation_matrix_[index1, index2]
 end
 function correlation(ito::ItoSet, brownian_id1::Symbol, brownian_id2::Symbol)
-    index1 = findall(brownian_id1 .== ito.brownian_ids_)[1]
-    index2 = findall(brownian_id2 .== ito.brownian_ids_)[1]
+    index1 = findfirst(==(brownian_id1), ito.brownian_ids_)
+    index2 = findfirst(==(brownian_id2), ito.brownian_ids_)
     return correlation(ito, index1, index2)
 end
 
@@ -323,10 +324,10 @@ function update!(sc::SimpleCovariance, from::Real, to::Real)
     old_duration = sc.to_ - sc.from_
     new_duration = to - from
     relative_duration = new_duration/old_duration
-    sc.covariance_  = sc.covariance_ * (relative_duration)
+    sc.covariance_  = Hermitian(sc.covariance_ .* relative_duration)
     sc.chol_ = ismissing(sc.chol_) ? missing : LowerTriangular(sc.chol_ .* sqrt(relative_duration))
-    sc.inverse_ = ismissing(sc.inverse_) ? missing : Hermitian(sc.inverse_ ./  (relative_duration))
-    sc.determinant_ = ismissing(sc.determinant_) ? missing : sc.determinant_ *  ((relative_duration)^length(sc.covariance_labels_))
+    sc.inverse_ = ismissing(sc.inverse_) ? missing : Hermitian(sc.inverse_ ./ relative_duration)
+    sc.determinant_ = ismissing(sc.determinant_) ? missing : sc.determinant_ *  (relative_duration^length(sc.covariance_labels_))
     sc.from_ = from
     sc.to_ = to
 end
@@ -361,7 +362,7 @@ Get the variance of an `ForwardCovariance` over a period.
 * A scalar
 """
 function variance(covar::ForwardCovariance, id::Symbol)
-        index = findall(id .== covar.covariance_labels_)[1]
+        index = findfirst(==(id), covar.covariance_labels_)
         return variance(covar, index)
 end
 function variance(covar::ForwardCovariance, index::Integer)
@@ -383,8 +384,8 @@ function covariance(covar::ForwardCovariance, index_1::Integer, index_2::Integer
     return covar.covariance_[index_1,index_2]
 end
 function covariance(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
-    index_1 = findall(id1 .== covar.covariance_labels_)[1]
-    index_2 = findall(id2 .== covar.covariance_labels_)[1]
+    index_1 = findfirst(==(id1), covar.covariance_labels_)
+    index_2 = findfirst(==(id2), covar.covariance_labels_)
     return covariance(covar, index_1, index_2)
 end
 
@@ -406,8 +407,8 @@ function correlation(covar::ForwardCovariance, index_1::Integer, index_2::Intege
     return cova/sqrt(var1 * var2)
 end
 function correlation(covar::ForwardCovariance, id1::Symbol, id2::Symbol)
-    index_1 = findall(id1 .== covar.covariance_labels_)[1]
-    index_2 = findall(id2 .== covar.covariance_labels_)[1]
+    index_1 = findfirst(==(id1), covar.covariance_labels_)
+    index_2 = findfirst(==(id2), covar.covariance_labels_)
     return correlation(covar, index_1, index_2)
 end
 
@@ -465,6 +466,63 @@ function get_draws(covar::Union{ForwardCovariance,SimpleCovariance}, num::Intege
     end
 end
 
+"""
+    get_draws_matrix(covar::Union{ForwardCovariance,SimpleCovariance}, num::Integer; number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)), antithetic_variates = false)
+
+High-performance variant of `get_draws` that returns a pre-allocated matrix instead of an array of `Dict`s.
+Uses in-place matrix multiplication and reusable buffers to minimise allocations.
+
+### Inputs
+* `covar` - A `ForwardCovariance` or `SimpleCovariance` struct to draw from.
+* `num` - The number of draws you want.
+* `number_generator` - How you want to generate random draws.
+* `antithetic_variates` - Do you want antithetic variate sampling.
+### Returns
+* A `Matrix{Float64}` of size `(num, dims)` where each row is a draw and each column corresponds to an integral.
+* A `Vector{Symbol}` of column labels matching `covar.covariance_labels_`.
+
+When `antithetic_variates = true`, `num` is rounded so that the returned matrix has `2 * round(num/2)` rows,
+with rows `2i-1` and `2i` summing to zero.
+"""
+function get_draws_matrix(covar::Union{ForwardCovariance,SimpleCovariance}, num::Integer;
+        number_generator::NumberGenerator = Mersenne(MersenneTwister(1234), length(covar.covariance_labels_)),
+        antithetic_variates = false)
+    dims = length(covar.covariance_labels_)
+    chol = covar.chol_
+    normal_draw = Vector{Float64}(undef, dims)
+    scaled_draw = Vector{Float64}(undef, dims)
+    if antithetic_variates
+        half_num = convert(Int, round(num/2))
+        result = Matrix{Float64}(undef, half_num * 2, dims)
+        for i in 1:half_num
+            uniform = next!(number_generator)
+            for j in 1:dims
+                normal_draw[j] = quantile(Normal(), uniform[j])
+            end
+            mul!(scaled_draw, chol, normal_draw)
+            row_pos = 2*(i-1) + 1
+            for j in 1:dims
+                result[row_pos, j] = scaled_draw[j]
+                result[row_pos + 1, j] = -scaled_draw[j]
+            end
+        end
+        return result, copy(covar.covariance_labels_)
+    else
+        result = Matrix{Float64}(undef, num, dims)
+        for i in 1:num
+            uniform = next!(number_generator)
+            for j in 1:dims
+                normal_draw[j] = quantile(Normal(), uniform[j])
+            end
+            mul!(scaled_draw, chol, normal_draw)
+            for j in 1:dims
+                result[i, j] = scaled_draw[j]
+            end
+        end
+        return result, copy(covar.covariance_labels_)
+    end
+end
+
 # This is most likely useful for bug hunting.
 """
     get_zero_draws(covar::ForwardCovariance)
@@ -510,8 +568,8 @@ function pdf(covar::ForwardCovariance, coordinates::Dict{Symbol,Real})
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)
     x = get.(Ref(coordinates), covar.covariance_labels_, 0)
-    one_on_sqrt_of_det_two_pi_covar     = 1/(sqrt(covar.determinant_) * (2*pi)^(rank_of_matrix/2))
-    return one_on_sqrt_of_det_two_pi_covar * exp(-0.5 * x' * covar.inverse_ * x)
+    one_on_sqrt_of_det_two_pi_covar     = 1/(sqrt(covar.determinant_) * exp(rank_of_matrix/2 * log2π))
+    return one_on_sqrt_of_det_two_pi_covar * exp(-0.5 * dot(x, covar.inverse_, x))
 end
 
 """
@@ -529,6 +587,6 @@ function log_likelihood(covar::ForwardCovariance, coordinates::Dict{Symbol,R}) w
     # Where Sigma is covariance matrix, \mu is means (0 in this case) and x is the coordinates.
     rank_of_matrix = length(covar.covariance_labels_)
     x = get.(Ref(coordinates), covar.covariance_labels_, 0)
-    one_on_sqrt_of_det_two_pi_covar     = -0.5*log(covar.determinant_)  +  (rank_of_matrix/2)*log(2*pi)
-    return one_on_sqrt_of_det_two_pi_covar + (-0.5 * x' * covar.inverse_ * x)
+    one_on_sqrt_of_det_two_pi_covar     = -0.5*log(covar.determinant_)  +  (rank_of_matrix/2)*log2π
+    return one_on_sqrt_of_det_two_pi_covar + (-0.5 * dot(x, covar.inverse_, x))
 end

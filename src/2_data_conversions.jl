@@ -36,7 +36,7 @@ function to_draws(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:size(X
         for j in 1:length(labels)
             draw[labels[j]] = X[i,j]
         end
-        draws = vcat(draws, draw)
+        push!(draws, draw)
     end
     return draws
 end
@@ -47,7 +47,7 @@ function to_draws(dd::DataFrame; labels::Array{Symbol,1} = Symbol.(names(dd)), f
         for j in labels
             draw[j] = dd[!,j][i]
         end
-        draws = vcat(draws, draw)
+        push!(draws, draw)
     end
     return draws
 end
@@ -67,7 +67,6 @@ function to_dataframe(X::Array{T,2}; labels::Array{Symbol,1} = Symbol.("x", 1:si
 end
 function to_dataframe(draws::Array{Dict{Symbol,T},1}; labels::Array{Symbol,1}  = collect(keys(draws[1]))) where T<:Real
     dd = DataFrame()
-    X = Array{T,2}(undef,length(draws), length(labels))
     for lab in labels
         q = Array{T,1}(undef, length(draws))
         for j in 1:length(draws)

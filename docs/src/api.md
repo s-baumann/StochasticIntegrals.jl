@@ -26,6 +26,7 @@ Mersenne
 SobolGen
 next!
 get_draws
+get_draws_matrix
 get_zero_draws
 ```
 

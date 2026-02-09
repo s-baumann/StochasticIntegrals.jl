@@ -235,4 +235,62 @@ using Test
     log_normal_antithetic_samples = exp.(normal_samples_antithetic[1])
     log_normal_antithetic_expectation_estimate = mean(log_normal_antithetic_samples)
     @test abs(log_normal_antithetic_expectation_estimate - theoretical_expectation) < abs(log_normal_expectation_estimate - theoretical_expectation)
+
+    # Testing get_draws_matrix
+    # Shape and labels
+    mat, labels = get_draws_matrix(cov_date, 100)
+    @test size(mat) == (100, 5)
+    @test Set(labels) == Set(cov_date.covariance_labels_)
+
+    # Consistency with get_draws: same seed → identical values
+    using StableRNGs
+    rng1 = Stable_RNG(StableRNG(77), UInt(length(cov_date.covariance_labels_)))
+    rng2 = Stable_RNG(StableRNG(77), UInt(length(cov_date.covariance_labels_)))
+    dict_draws = get_draws(cov_date, 10; number_generator = rng1)
+    mat_draws, mat_labels = get_draws_matrix(cov_date, 10; number_generator = rng2)
+    for i in 1:10
+        for (j, lab) in enumerate(mat_labels)
+            @test abs(mat_draws[i, j] - dict_draws[i][lab]) < tol
+        end
+    end
+
+    # Statistical: variance matches theoretical (100k draws)
+    normal_twister_mat = Mersenne(MersenneTwister(123), length(cov_date.covariance_labels_))
+    mat_large, mat_large_labels = get_draws_matrix(cov_date, 100000; number_generator = normal_twister_mat)
+    for (j, lab) in enumerate(mat_large_labels)
+        @test abs(var(mat_large[:, j]) - variance(cov_date, lab)) < 0.12
+    end
+
+    # Covariance between columns
+    idx_fx = findfirst(==(  :GBP_FX), mat_large_labels)
+    idx_usd = findfirst(==(:USD_IR_a), mat_large_labels)
+    @test abs(cov(mat_large[:, idx_fx], mat_large[:, idx_usd]) - covariance(cov_date, :GBP_FX, :USD_IR_a)) < 0.002
+
+    # Antithetic variates
+    rng_anti_mat = Mersenne(MersenneTwister(123), length(cov_date.covariance_labels_))
+    mat_anti, labels_anti = get_draws_matrix(cov_date, 100000; number_generator = rng_anti_mat, antithetic_variates = true)
+    for j in 1:length(labels_anti)
+        @test abs(sum(mat_anti[:, j])) < 100*tol
+    end
+    # Each pair sums to zero
+    for i in 1:2:size(mat_anti, 1)
+        for j in 1:size(mat_anti, 2)
+            @test mat_anti[i, j] + mat_anti[i+1, j] == 0.0
+        end
+    end
+
+    # Works with SimpleCovariance
+    sc = SimpleCovariance(ito_set_, years_from_global_base_date(today), years_from_global_base_date(date_2020))
+    mat_sc, labels_sc = get_draws_matrix(sc, 10)
+    @test size(mat_sc) == (10, length(sc.covariance_labels_))
+
+    # Interop: round-trip through to_draws
+    mat_rt, labels_rt = get_draws_matrix(cov_date, 7)
+    draws_rt = to_draws(mat_rt; labels = labels_rt)
+    @test length(draws_rt) == 7
+    for (j, lab) in enumerate(labels_rt)
+        for i in 1:7
+            @test abs(draws_rt[i][lab] - mat_rt[i, j]) < tol
+        end
+    end
 end

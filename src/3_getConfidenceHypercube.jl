@@ -1,9 +1,10 @@
 function _one_iterate(cutoff_multiplier::Real, target::Real, draws::Array{T,2}, covar_matrix, tuning_parameter::Real) where T<:Real
     cutoffs = cutoff_multiplier .* sqrt.(diag(covar_matrix))
     number_of_draws = size(draws)[1]
+    dims = size(draws, 2)
     in_confidence_area = 0
     for i in 1:number_of_draws
-        in_confidence_area += all(abs.(draws[i,:]) .< cutoffs)
+        in_confidence_area += all(j -> abs(draws[i,j]) < cutoffs[j], 1:dims)
     end
     mass_in_area = in_confidence_area/number_of_draws
     confidence_gap = target - mass_in_area
@@ -15,9 +16,13 @@ function _randoms(chol, num::Integer, Seed::Integer)
     dims = size(chol)[1]
     float_type = typeof(chol[1,1])
     array = Array{float_type,2}(undef, num, dims)
+    sobs = Vector{float_type}(undef, dims)
+    normal_draw = Vector{float_type}(undef, dims)
     for i in 1:num
-        sobs = rand(twist, dims)
-        normal_draw = quantile.(Ref(Normal()), sobs)
+        rand!(twist, sobs)
+        for j in 1:dims
+            normal_draw[j] = quantile(Normal(), sobs[j])
+        end
         scaled_draw = chol * normal_draw
         array[i,:] = scaled_draw
     end
@@ -38,7 +43,8 @@ function get_confidence_hypercube(covar::ForwardCovariance, confidence_level::Re
         error("Could not converge to a solution for the confidence hypercube. Try increasing the number of samples or adjusting the tuning parameter.")
     end
     cutoff_multiplier = FP.FixedPoint_[1]
-    cutoffs = vcat(zip(-cutoff_multiplier .* sqrt.(diag(covar.covariance_)) , cutoff_multiplier .* sqrt.(diag(covar.covariance_)))...)
+    sd = sqrt.(diag(covar.covariance_))
+    cutoffs = vcat(zip(-cutoff_multiplier .* sd , cutoff_multiplier .* sd)...)
     return Dict{Symbol,Tuple{T,T}}(covar.covariance_labels_ .=> cutoffs)
 end
 

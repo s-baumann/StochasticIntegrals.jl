@@ -66,6 +66,10 @@ It is also possible to generate random numbers using either the get\_normal\_dra
 ```
 draws = get_normal_draws(covar, 10)
 ```
+For higher performance when generating many draws, `get_draws_matrix` returns a `(Matrix{Float64}, Vector{Symbol})` tuple instead of an array of `Dict`s, avoiding per-draw allocations:
+```
+mat, labels = get_draws_matrix(covar, 10)
+```
 For ascertaining the probability of the
 integrals jointing reaching some set of values there are the pdf and log\_likelihood methods. For instance
 to find the log likelihood of the first draw we obtained above:
